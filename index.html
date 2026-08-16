@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="_ds/modernist-2397fac4-329b-4fb0-9f1a-ed495205969b/styles.css">
+<script src="_ds/modernist-2397fac4-329b-4fb0-9f1a-ed495205969b/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#dedbdb;font-family:"Noto Sans JP","Archivo",system-ui,sans-serif;color:var(--color-text)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+*{box-sizing:border-box}
+.tk::-webkit-scrollbar{width:0}
+.tk{scrollbar-width:none}
+input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-serif}
+@keyframes tkin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:760px){
+  body{background:var(--color-bg)}
+  .tk-stage{padding:0!important;gap:0!important;align-items:stretch!important}
+  .tk-phone{width:100%!important;height:100dvh!important;border:none!important;box-shadow:none!important}
+  .tk-notes{display:none!important}
+}
+</style>
+</helmet>
+
+<div class="tk-stage" style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;gap:40px">
+<div class="tk-phone" style="width:390px;height:844px;flex:none;border:2px solid var(--color-text);background:var(--color-bg);display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:var(--shadow-lg)">
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px 6px;font:600 11px/1 Archivo,sans-serif;letter-spacing:.04em;color:var(--color-neutral-700)">
+<span style="font-weight:800;letter-spacing:.08em">TSUMUGI</span><span>{{ clockRight }}</span>
+</div>
+
+<sc-if value="{{ isStart }}">
+<div data-screen-label="Start" class="tk" style="flex:1;overflow:auto;padding:28px 22px 24px;display:flex;flex-direction:column">
+<div style="font:800 34px/0.95 Archivo,sans-serif;letter-spacing:-0.02em">TSUMUGI</div>
+<div style="margin-top:8px;font:600 11px/1.4 Archivo,sans-serif;letter-spacing:.14em;color:var(--color-accent-700)">ORDER CONCEPT SHEET</div>
+<div style="height:2px;background:var(--color-text);margin:18px 0"></div>
+<div style="font:400 14px/1.9;color:var(--color-neutral-800)">お店の世界観と、つくりたい器のイメージを順番にお聞きします。写真を添えていただくと、窯元との共有がより正確になります。</div>
+<div style="margin-top:26px;display:flex;flex-direction:column;gap:0;border-top:2px solid var(--color-text)">
+<sc-for list="{{ sections }}" as="s" hint-placeholder-count="3">
+<div style="display:flex;gap:14px;padding:14px 2px;border-bottom:1px solid var(--color-neutral-300);align-items:baseline">
+<div style="font:800 15px/1 Archivo,sans-serif;color:var(--color-accent);width:26px;flex:none">{{ s.n }}</div>
+<div style="flex:1">
+<div style="font:700 14px/1.4">{{ s.ja }}</div>
+<div style="margin-top:3px;font:600 10px/1.3 Archivo,sans-serif;letter-spacing:.1em;color:var(--color-neutral-600)">{{ s.en }}</div>
+</div>
+<div style="font:400 11px/1 Archivo,sans-serif;color:var(--color-neutral-600)">{{ s.count }}</div>
+</div>
+</sc-for>
+</div>
+<div style="flex:1;min-height:20px"></div>
+<div style="font:400 11px/1.7;color:var(--color-neutral-600);margin-bottom:12px">入力内容は自動で下書き保存されます。途中でやめても、あとから続けられます。</div>
+<button class="btn btn-primary btn-block" onClick="{{ begin }}" style="min-height:52px">記入をはじめる</button>
+<sc-if value="{{ hasDraft }}">
+<button class="btn btn-secondary btn-block" onClick="{{ resume }}" style="min-height:48px;margin-top:10px">下書きから再開（{{ draftAt }}）</button>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSection }}">
+<div data-screen-label="Section intro" class="tk" style="flex:1;overflow:auto;padding:0;display:flex;flex-direction:column;background:var(--color-accent);color:#fff;animation:tkin .28s ease both">
+<div style="padding:28px 22px;flex:1;display:flex;flex-direction:column;justify-content:center">
+<div style="font:800 72px/0.85 Archivo,sans-serif;letter-spacing:-0.04em">{{ secN }}</div>
+<div style="height:2px;background:#fff;margin:22px 0 20px"></div>
+<div style="font:700 24px/1.5">{{ secJa }}</div>
+<div style="margin-top:10px;font:600 11px/1.4 Archivo,sans-serif;letter-spacing:.14em;opacity:.85">{{ secEn }}</div>
+<div style="margin-top:22px;font:400 13px/1.9;opacity:.92">{{ secDesc }}</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStep }}">
+<div style="padding:6px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--color-text)">
+<div style="flex:1;display:flex;gap:4px">
+<sc-for list="{{ bars }}" as="b" hint-placeholder-count="3">
+<div style="flex:1;height:6px;background:var(--color-neutral-300)">
+<div style="height:100%;background:var(--color-accent);width:{{ b.w }}"></div>
+</div>
+</sc-for>
+</div>
+<div style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.06em;color:var(--color-neutral-700)">{{ counter }}</div>
+<button class="btn btn-ghost" onClick="{{ save }}" style="min-height:30px;padding:6px 8px;font-size:11px">保存</button>
+</div>
+
+<div data-screen-label="Question" class="tk" style="flex:1;overflow:auto;padding:22px 22px 28px;display:flex;flex-direction:column;gap:18px">
+<div>
+<div style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;color:var(--color-accent-700)">{{ stepKicker }}</div>
+<div style="margin-top:12px;font:700 21px/1.55">{{ stepJa }}</div>
+<sc-if value="{{ showEn }}">
+<div style="margin-top:7px;font:600 10px/1.3 Archivo,sans-serif;letter-spacing:.12em;color:var(--color-neutral-600)">{{ stepEn }}</div>
+</sc-if>
+<sc-if value="{{ hasHelp }}">
+<div style="margin-top:12px;font:400 12px/1.8;color:var(--color-neutral-700);border-left:2px solid var(--color-neutral-300);padding-left:10px">{{ stepHelp }}</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ hasOptions }}">
+<div style="display:flex;flex-direction:column;gap:0;border-top:1px solid var(--color-divider)">
+<sc-for list="{{ options }}" as="o" hint-placeholder-count="3">
+<label class="radio" style="width:100%;min-height:52px;gap:12px;padding:10px 4px;border-bottom:1px solid var(--color-divider);font-size:15px">
+<input type="radio" name="{{ o.name }}" checked="{{ o.on }}" onChange="{{ o.pick }}">
+<span class="dot"></span>
+<span>{{ o.label }}</span>
+</label>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasFields }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="1">
+<div class="field">
+<sc-if value="{{ f.hasLabel }}">
+<label>{{ f.label }}</label>
+</sc-if>
+<div style="display:flex;align-items:center;gap:8px">
+<sc-if value="{{ f.hasPrefix }}"><span style="font:600 15px/1 Archivo,sans-serif;color:var(--color-neutral-700)">{{ f.prefix }}</span></sc-if>
+<input class="input" value="{{ f.v }}" onChange="{{ f.set }}" placeholder="{{ f.ph }}" inputMode="{{ f.mode }}" style="flex:1;min-width:0;min-height:50px;padding:12px;font-size:15px">
+<sc-if value="{{ f.hasUnit }}"><span style="font:600 13px/1 'Noto Sans JP',sans-serif;color:var(--color-neutral-700);white-space:nowrap">{{ f.unit }}</span></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasAreas }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{ areas }}" as="f" hint-placeholder-count="1">
+<textarea class="input" value="{{ f.v }}" onChange="{{ f.set }}" placeholder="{{ f.ph }}" rows="6" style="min-height:160px;padding:12px;font-size:15px;line-height:1.85"></textarea>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasPhotos }}">
+<div style="display:flex;flex-direction:column;gap:22px">
+<sc-for list="{{ photos }}" as="p" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.12em;color:var(--color-accent-700)">{{ p.en }}</span>
+<span style="font:500 11px/1;color:var(--color-neutral-600)">{{ p.ja }}</span>
+</div>
+<label style="display:block;position:relative;height:170px;border:2px solid var(--color-text);cursor:pointer;overflow:hidden;background:var(--color-neutral-100)">
+<input type="file" accept="image/*" onChange="{{ p.pick }}" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer">
+<sc-if value="{{ p.has }}">
+<img src="{{ p.url }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+</sc-if>
+<sc-if value="{{ p.empty }}">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:repeating-linear-gradient(135deg,transparent 0 7px,var(--color-neutral-200) 7px 8px)">
+<span style="font:800 22px/1 Archivo,sans-serif;color:var(--color-accent)">＋</span>
+<span style="font:500 12px/1.5;color:var(--color-neutral-700)">タップして写真を追加</span>
+<span style="font:400 10px/1.4 Archivo,sans-serif;color:var(--color-neutral-600)">{{ p.hint }}</span>
+</div>
+</sc-if>
+</label>
+<input class="input" value="{{ p.memo }}" onChange="{{ p.setMemo }}" placeholder="ポイント：この写真で伝えたいこと" style="min-height:48px;padding:12px;font-size:14px">
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isReview }}">
+<div data-screen-label="Review" class="tk" style="flex:1;overflow:auto;padding:24px 22px 28px">
+<div style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;color:var(--color-accent-700)">REVIEW</div>
+<div style="margin-top:12px;font:700 22px/1.5">記入内容の確認</div>
+<div style="margin-top:8px;font:400 12px/1.8;color:var(--color-neutral-700)">未入力の項目は空欄のままでも送信できます。タップで戻って修正できます。</div>
+<div style="height:2px;background:var(--color-text);margin:18px 0 0"></div>
+<sc-for list="{{ review }}" as="r" hint-placeholder-count="6">
+<button onClick="{{ r.go }}" style="display:flex;gap:12px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--color-neutral-300);padding:13px 2px;cursor:pointer;align-items:flex-start">
+<span style="font:600 10px/1.6 Archivo,sans-serif;color:var(--color-neutral-500);width:26px;flex:none">{{ r.n }}</span>
+<span style="flex:1;min-width:0">
+<span style="display:block;font:600 11px/1.4;color:var(--color-neutral-700)">{{ r.label }}</span>
+<span style="display:block;margin-top:4px;font:400 14px/1.6;color:{{ r.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.value }}</span>
+</span>
+<span style="font:600 10px/1.6 Archivo,sans-serif;color:var(--color-accent);flex:none">EDIT</span>
+</button>
+</sc-for>
+<div style="margin-top:20px;border:2px solid var(--color-neutral-400);padding:14px;background:var(--color-neutral-100)">
+<div style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.12em;color:var(--color-neutral-700)">NOTE</div>
+<div style="margin-top:8px;font:400 12px/1.9;color:var(--color-neutral-800)">陶器は原料・釉薬・焼成条件により、サンプルと量産品の間でも色味・表情・寸法に個体差が生じる場合があります。最終サンプル承認時に許容範囲を確認させてください。</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDone }}">
+<div data-screen-label="Complete" class="tk" style="flex:1;overflow:auto;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;animation:tkin .3s ease both">
+<div style="width:44px;height:44px;background:var(--color-accent)"></div>
+<div style="margin-top:24px;font:700 26px/1.5">送信しました</div>
+<div style="margin-top:14px;font:400 14px/1.95;color:var(--color-neutral-800)">ご記入ありがとうございます。担当より2営業日以内にご連絡し、サンプル製作の進め方をご相談させていただきます。</div>
+<div style="height:2px;background:var(--color-text);margin:24px 0 0"></div>
+<div style="display:flex;padding:14px 0;border-bottom:1px solid var(--color-neutral-300);justify-content:space-between">
+<span style="font:500 12px/1.4;color:var(--color-neutral-700)">記入項目</span><span style="font:600 13px/1.4 Archivo,sans-serif">{{ doneFilled }}</span>
+</div>
+<div style="display:flex;padding:14px 0;border-bottom:1px solid var(--color-neutral-300);justify-content:space-between">
+<span style="font:500 12px/1.4;color:var(--color-neutral-700)">添付写真</span><span style="font:600 13px/1.4 Archivo,sans-serif">{{ donePhotos }}</span>
+</div>
+<div style="display:flex;padding:14px 0;justify-content:space-between">
+<span style="font:500 12px/1.4;color:var(--color-neutral-700)">受付番号</span><span style="font:600 13px/1.4 Archivo,sans-serif">{{ doneRef }}</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasErr }}">
+<div style="border-top:2px solid var(--color-accent);background:var(--color-accent-100);padding:12px 16px;display:flex;gap:10px;align-items:flex-start">
+<span style="width:10px;height:10px;flex:none;margin-top:5px;background:var(--color-accent)"></span>
+<span style="font:400 12px/1.7;color:var(--color-accent-800)">{{ err }}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasNav }}">
+<div style="border-top:2px solid var(--color-text);padding:12px 16px 16px;display:flex;gap:10px;background:var(--color-bg)">
+<sc-if value="{{ canBack }}">
+<button class="btn btn-secondary" onClick="{{ back }}" style="flex:0 0 92px;min-height:50px;justify-content:flex-start;text-align:left">戻る</button>
+</sc-if>
+<button class="btn btn-primary" onClick="{{ next }}" disabled="{{ sending }}" style="flex:1;min-height:50px;justify-content:flex-start;text-align:left">{{ nextLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}">
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;pointer-events:none">
+<div style="margin-bottom:96px;background:var(--color-text);color:#fff;padding:11px 18px;font:500 12px/1 'Noto Sans JP',sans-serif">{{ toast }}</div>
+</div>
+</sc-if>
+
+</div>
+
+<div class="tk-notes" style="width:250px;flex:none;padding-top:6px">
+<div style="font:800 13px/1.3 Archivo,sans-serif;letter-spacing:.02em">TSUMUGI ORDER APP</div>
+<div style="height:2px;background:var(--color-text);margin:10px 0 14px"></div>
+<div style="font:400 12px/1.9;color:var(--color-neutral-800)">紙のコンセプトシート3ページを、1画面1問のウィザードに再構成したセルフ記入アプリです。項目名・選択肢はシートの表記をそのまま使っています。</div>
+<div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
+<sc-for list="{{ notes }}" as="n" hint-placeholder-count="4">
+<div style="display:flex;gap:9px;font:400 11.5px/1.7;color:var(--color-neutral-700)"><span style="color:var(--color-accent);font-weight:700">—</span><span>{{ n.t }}</span></div>
+</sc-for>
+</div>
+<button class="btn btn-ghost" onClick="{{ reset }}" style="margin-top:20px;min-height:38px;font-size:11px">最初から見る（下書き削除）</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:940},&quot;englishLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;表示&quot;},&quot;endpoint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;送信先&quot;,&quot;label&quot;:&quot;Apps Script Web App URL&quot;}}">
+const SEC = [
+  {n:'01',ja:'店舗・ブランドコンセプト',en:'BRAND & STORE CONCEPT',desc:'器づくりの背景となる、お店の世界観・料理・空間を共有します。'},
+  {n:'02',ja:'器 仕様・デザイン',en:'TABLEWARE SPECIFICATION',desc:'形状・素材・表情・数量・価格条件を具体化し、窯元との共通言語にします。'},
+  {n:'03',ja:'製作スケジュール',en:'PRODUCTION SCHEDULE',desc:'サンプル承認から量産・検品・納品までの進行を確認します。'}
+];
+
+const STEPS = [
+  {s:0,g:'案件情報 / PROJECT',ja:'今回のご依頼のお名前を教えてください',en:'PROJECT',f:[{id:'project',ph:'例：秋の会席 新調'}]},
+  {s:0,g:'案件情報 / PROJECT',ja:'お店の名前',en:'STORE',f:[{id:'store',ph:'例：紬 銀座'}]},
+  {s:0,g:'案件情報 / PROJECT',ja:'ご担当者とご連絡先',en:'CONTACT',f:[{id:'contact',l:'ご担当者',ph:'お名前'},{id:'contact_tel',l:'連絡先',ph:'電話番号 / メール',mode:'tel'}]},
+  {s:0,g:'ロゴ・店舗イメージ',ja:'ロゴと店内の写真を添えてください',en:'LOGO & ATMOSPHERE',help:'内装パースや参考画像でも構いません。空間の明るさや素材感が伝わるものが理想です。',p:[
+    {id:'logo',en:'LOGO',ja:'ロゴ画像',hint:'ai / png / jpg'},
+    {id:'atmos',en:'STORE ATMOSPHERE / INTERIOR',ja:'店舗写真・内装',hint:'店内 / 卓上 / 照明'}]},
+  {s:0,g:'お店のコンセプト',ja:'お店が大切にしていることを聞かせてください',en:'STORE CONCEPT',help:'ブランドストーリー / 価値 / ターゲット / 料理の特徴など',a:[{id:'concept',ph:'例：素材の力を引き出す、静かな和食。40代以上のお客様が中心で…'}]},
+  {s:0,g:'デザインの方向',ja:'今回の器で表現したいこと',en:'DESIGN DIRECTION',help:'空間や料理との関係、器で表現したい印象・キーワード',a:[{id:'direction',ph:'例：余白のある盛付、土の温度が残る質感、料理の色が締まる釉薬'}]},
+  {s:0,g:'料理・提供メニュー / MENU',ja:'主な料理',en:'MENU',f:[{id:'dishes',ph:'例：先付、造り、炊合せ'}]},
+  {s:0,g:'料理・提供メニュー / MENU',ja:'使用シーン',en:'USAGE',f:[{id:'scene',ph:'例：コース前半、夜のみ使用'}]},
+  {s:0,g:'料理・提供メニュー / MENU',ja:'盛付イメージ',en:'PLATING',f:[{id:'plating',ph:'例：中央に低く、余白を大きく'}]},
+  {s:0,g:'料理・提供メニュー / MENU',ja:'特記事項',en:'NOTES',a:[{id:'notes1',ph:'その他、共有しておきたいこと'}]},
+
+  {s:1,g:'基本仕様 / SPECIFICATION',ja:'アイテム名と使用用途',en:'ITEM',f:[{id:'item',l:'アイテム名',ph:'例：八寸皿'},{id:'usage',l:'使用用途',ph:'例：先付の盛皿'}]},
+  {s:1,g:'基本仕様 / SPECIFICATION',ja:'形状',en:'SHAPE',o:['丸','楕円','角','リム','高台','その他'],oid:'shape',f:[{id:'shape_note',l:'補足',ph:'選んだ形状の補足（任意）'}]},
+  {s:1,g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
+  {s:1,g:'素材・表情',ja:'素材・土',en:'MATERIAL',f:[{id:'material',ph:'例：信楽の粗い土'}]},
+  {s:1,g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
+  {s:1,g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
+  {s:1,g:'素材・表情',ja:'ロゴ・加飾',en:'DECORATION',f:[{id:'deco',ph:'例：高台内に印判で小さく'}]},
+  {s:1,g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
+  {s:1,g:'数量 / QUANTITY',ja:'予備・追加生産',en:'SPARE / REORDER',o:['有','無'],oid:'spare',f:[{id:'spare_qty',l:'数量',unit:'個',mode:'numeric'}]},
+  {s:1,g:'イメージ写真 / REFERENCE',ja:'イメージに近い器の写真を3枚まで',en:'REFERENCE IMAGES',help:'完成形でなくて構いません。「この色」「この縁の形」など、1枚ごとにポイントを書き添えてください。',p:[
+    {id:'ref1',en:'REFERENCE 01',ja:'参考写真',hint:'色 / 釉薬'},
+    {id:'ref2',en:'REFERENCE 02',ja:'参考写真',hint:'形状 / 縁'},
+    {id:'ref3',en:'REFERENCE 03',ja:'参考写真',hint:'質感 / 盛付'}]},
+  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
+  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample',f:[{id:'sample_qty',l:'数量',unit:'個',mode:'numeric'}]},
+  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'希望納期',en:'DUE DATE',f:[{id:'due',ph:'例：2026年11月20日'}]},
+  {s:1,g:'条件・品質基準 / QUALITY',ja:'食洗機・レンジ対応',en:'DISHWASHER / MICROWAVE',o:['必須','不要','要相談'],oid:'dish'},
+  {s:1,g:'条件・品質基準 / QUALITY',ja:'梱包条件',en:'PACKING',f:[{id:'packing',ph:'例：1枚ずつ紙包み、6枚1箱'}]},
+  {s:1,g:'個体差・NG事項 / TOLERANCE',ja:'個体差の許容範囲',en:'TOLERANCE',help:'色ムラ / 釉薬 / 形状 / 寸法など',a:[{id:'tolerance',ph:'例：色ムラは景色として歓迎。寸法は±3mmまで。'}]},
+  {s:1,g:'個体差・NG事項 / TOLERANCE',ja:'避けたいこと（NG事項）',en:'NG',help:'避けたい色・艶・表情・形状など',a:[{id:'ng',ph:'例：全面の強い光沢、白すぎる釉'}]},
+  {s:1,g:'優先順位 / PRIORITY',ja:'最優先事項 TOP 3',en:'PRIORITY TOP 3',help:'すべてを両立できない場合、この順に優先します。',f:[{id:'p1',l:'1',ph:'例：釉薬の色'},{id:'p2',l:'2',ph:'例：縁の薄さ'},{id:'p3',l:'3',ph:'例：納期'}]},
+
+  {s:2,g:'納品情報 / DELIVERY',ja:'希望納期',en:'DUE DATE',f:[{id:'d_due',ph:'例：2026年12月10日'}]},
+  {s:2,g:'納品情報 / DELIVERY',ja:'納品場所',en:'DELIVERY ADDRESS',f:[{id:'d_place',ph:'住所・店舗名'}]},
+  {s:2,g:'納品情報 / DELIVERY',ja:'納品先のご担当者と連絡先',en:'RECIPIENT',f:[{id:'d_person',l:'納品先担当者',ph:'お名前'},{id:'d_tel',l:'連絡先',ph:'電話番号',mode:'tel'}]},
+  {s:2,g:'最終承認・備考 / NOTES',ja:'備考',en:'NOTES',help:'追加条件、量産時の注意事項、変更履歴など',a:[{id:'remarks',ph:'ご自由にお書きください'}]}
+];
+
+const KEY = 'tsumugi_draft_v1';
+const EPKEY = 'tsumugi_endpoint';
+
+/* Downscale + re-encode before upload: Drive/Sheets choke on 5MB phone photos. */
+function compress(file, max, quality){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('read'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('decode'));
+      img.onload=()=>{
+        const scale=Math.min(1,max/Math.max(img.width,img.height));
+        const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+        const c=document.createElement('canvas');
+        c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve({dataUrl:c.toDataURL('image/jpeg',quality), w, h, name:file.name});
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+class Component extends DCLogic {
+  state = {screen:'start',i:0,a:{},photos:{},toast:'',draft:null,sending:false,err:'',ref:''};
+
+  componentDidMount(){
+    try{const raw=localStorage.getItem(KEY); if(raw) this.setState({draft:JSON.parse(raw)});}catch(e){}
+  }
+  persist(a){
+    try{localStorage.setItem(KEY,JSON.stringify({a,at:Date.now()}));}catch(e){}
+  }
+  set(id,v){
+    const a={...this.state.a,[id]:v};
+    this.setState({a});
+    this.persist(a);
+  }
+  flash(t){ this.setState({toast:t}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),1600); }
+
+  filled(st){
+    const ids=[...(st.f||[]),...(st.a||[])].map(x=>x.id);
+    if(st.oid) ids.push(st.oid);
+    if(ids.some(id=>(this.state.a[id]||'').trim())) return true;
+    return (st.p||[]).some(p=>this.state.photos[p.id]);
+  }
+
+  go(i){ this.setState({screen:'step',i}); }
+  next(){
+    const {screen,i}=this.state;
+    if(screen==='section'){ this.setState({screen:'step'}); return; }
+    if(screen==='review'){ this.submit(); return; }
+    if(screen==='done'){ return; }
+    const nx=i+1;
+    if(nx>=STEPS.length){ this.setState({screen:'review'}); return; }
+    if(STEPS[nx].s!==STEPS[i].s){ this.setState({i:nx,screen:'section'}); return; }
+    this.setState({i:nx});
+  }
+  back(){
+    const {screen,i}=this.state;
+    if(screen==='section'){ if(i===0){this.setState({screen:'start'});} else {this.setState({screen:'step',i:i-1});} return; }
+    if(screen==='review'){ this.setState({screen:'step',i:STEPS.length-1}); return; }
+    if(i===0){ this.setState({screen:'start'}); return; }
+    if(STEPS[i-1].s!==STEPS[i].s){ this.setState({screen:'step',i:i-1}); return; }
+    this.setState({i:i-1});
+  }
+
+  endpoint(){
+    let ep=(this.props.endpoint||'').trim();
+    if(!ep){ try{ ep=(localStorage.getItem(EPKEY)||'').trim(); }catch(e){} }
+    return ep;
+  }
+
+  payload(){
+    const rows=STEPS.flatMap(st=>{
+      const out=[];
+      if(st.oid) out.push({section:SEC[st.s].ja, group:st.g, label:st.ja, key:st.oid, value:this.state.a[st.oid]||''});
+      [...(st.f||[]),...(st.a||[])].forEach(f=>{
+        out.push({section:SEC[st.s].ja, group:st.g, label:(f.l?st.ja+'／'+f.l:st.ja), key:f.id, value:this.state.a[f.id]||''});
+      });
+      (st.p||[]).forEach(p=>{
+        out.push({section:SEC[st.s].ja, group:st.g, label:p.en+' メモ', key:'memo_'+p.id, value:this.state.a['memo_'+p.id]||''});
+      });
+      return out;
+    });
+    const files=[];
+    STEPS.forEach(st=>(st.p||[]).forEach(p=>{
+      const ph=this.state.photos[p.id];
+      if(ph) files.push({key:p.id, label:p.en, memo:this.state.a['memo_'+p.id]||'', dataUrl:ph.dataUrl, filename:p.id+'.jpg'});
+    }));
+    return {
+      form:'TSUMUGI ORDER CONCEPT SHEET',
+      submittedAt:new Date().toISOString(),
+      store:this.state.a.store||'', project:this.state.a.project||'',
+      contact:this.state.a.contact||'', contactTel:this.state.a.contact_tel||'',
+      rows, files
+    };
+  }
+
+  async submit(){
+    const ep=this.endpoint();
+    const ref='TSM-'+new Date().getFullYear()+'-'+String(Date.now()).slice(-4);
+    this.setState({sending:true,err:''});
+    if(!ep){
+      setTimeout(()=>this.setState({sending:false,screen:'done',ref:ref+'（デモ）'}),900);
+      return;
+    }
+    try{
+      const body=JSON.stringify({...this.payload(), ref});
+      await fetch(ep,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+      try{ localStorage.removeItem(KEY); }catch(e){}
+      this.setState({sending:false,screen:'done',ref,draft:null});
+    }catch(e){
+      this.setState({sending:false,err:'送信できませんでした。通信環境をご確認のうえ、もう一度お試しください。入力内容は保存されています。'});
+    }
+  }
+
+  renderVals(){
+    const st=STEPS[this.state.i]||STEPS[0];
+    const {screen}=this.state;
+    const isStep=screen==='step';
+    const secIdx = screen==='section'? st.s : st.s;
+    const sec=SEC[secIdx]||SEC[0];
+
+    const counts=SEC.map((s,k)=>STEPS.filter(x=>x.s===k).length);
+    const bars=SEC.map((s,k)=>{
+      const list=STEPS.filter(x=>x.s===k);
+      const done=list.filter(x=>this.filled(x)).length;
+      return {w:Math.round(done/list.length*100)+'%'};
+    });
+
+    const mk=(f,i)=>({
+      hasLabel:!!f.l, label:f.l||'',
+      hasPrefix:!!f.prefix, prefix:f.prefix||'',
+      hasUnit:!!f.unit, unit:f.unit||'',
+      ph:f.ph||'', mode:f.mode||'text',
+      v:this.state.a[f.id]||'',
+      set:(e)=>this.set(f.id,e.target.value)
+    });
+
+    const photos=(st.p||[]).map(p=>{
+      const cur=this.state.photos[p.id];
+      return {
+        en:p.en, ja:p.ja, hint:p.hint,
+        has:!!cur, empty:!cur, url:cur?cur.dataUrl:'',
+        memo:this.state.a['memo_'+p.id]||'',
+        setMemo:(e)=>this.set('memo_'+p.id,e.target.value),
+        pick:async (e)=>{
+          const file=e.target.files&&e.target.files[0];
+          if(!file) return;
+          try{
+            const out=await compress(file,1600,0.82);
+            this.setState(s=>({photos:{...s.photos,[p.id]:out}}));
+          }catch(err){
+            this.flash('この画像は読み込めませんでした');
+          }
+        }
+      };
+    });
+
+    const options=(st.o||[]).map(label=>({
+      label, name:'opt_'+st.oid, on:this.state.a[st.oid]===label, off:this.state.a[st.oid]!==label,
+      pick:()=>this.set(st.oid,label)
+    }));
+
+    const review=STEPS.map((x,k)=>{
+      const parts=[...(x.f||[]),...(x.a||[])].map(f=>this.state.a[f.id]).filter(v=>v&&v.trim());
+      if(x.oid&&this.state.a[x.oid]) parts.unshift(this.state.a[x.oid]);
+      const np=(x.p||[]).filter(p=>this.state.photos[p.id]).length;
+      if(np) parts.push('写真 '+np+'枚');
+      const v=parts.join(' / ');
+      return {n:String(k+1).padStart(2,'0'), label:x.ja, value:v||'未入力',
+        color: v? 'var(--color-text)':'var(--color-neutral-500)',
+        go:()=>this.go(k)};
+    });
+
+    const nPhotos=Object.keys(this.state.photos).length;
+    const nFilled=STEPS.filter(x=>this.filled(x)).length;
+    const d=this.state.draft;
+
+    return {
+      clockRight:'記入 '+Math.round(nFilled/STEPS.length*100)+'%',
+      sections:SEC.map((s,k)=>({...s,count:counts[k]+'問'})),
+      isStart:screen==='start', isSection:screen==='section', isStep, isReview:screen==='review', isDone:screen==='done',
+      hasNav:screen!=='done', canBack:screen!=='start',
+      nextLabel: this.state.sending?'送信中…' : screen==='start'?'記入をはじめる' : screen==='section'?'はじめる' : screen==='review'?'この内容で送信する' : (this.state.i===STEPS.length-1?'確認へ進む':'次へ'),
+      sending:this.state.sending,
+      hasErr:!!this.state.err, err:this.state.err,
+      live:!!this.endpoint(),
+      next:()=>this.next(), back:()=>this.back(),
+      begin:()=>this.setState({screen:'section',i:0}),
+      hasDraft:!!d, draftAt: d? new Date(d.at).toLocaleDateString('ja-JP'):'',
+      resume:()=>{ this.setState({a:d.a||{},screen:'section',i:0}); this.flash('下書きを読み込みました'); },
+      save:()=>{ this.persist(this.state.a); this.flash('下書きを保存しました'); },
+      reset:()=>{ try{localStorage.removeItem(KEY);}catch(e){} this.setState({screen:'start',i:0,a:{},photos:{},draft:null}); },
+      secN:sec.n, secJa:sec.ja, secEn:sec.en, secDesc:sec.desc,
+      counter:String(this.state.i+1).padStart(2,'0')+' / '+STEPS.length,
+      bars,
+      stepKicker:st.g, stepJa:st.ja, stepEn:st.en,
+      showEn:(this.props.englishLabels??true)&&!!st.en,
+      hasHelp:!!st.help, stepHelp:st.help||'',
+      hasOptions:(st.o||[]).length>0, options,
+      hasFields:(st.f||[]).length>0, fields:(st.f||[]).map(mk),
+      hasAreas:(st.a||[]).length>0, areas:(st.a||[]).map(mk),
+      hasPhotos:(st.p||[]).length>0, photos,
+      review,
+      doneFilled:nFilled+' / '+STEPS.length,
+      donePhotos:nPhotos+' 枚',
+      doneRef:this.state.ref||'—',
+      toast:this.state.toast,
+      notes:[
+        {t:'項目名は紙のシート（案件名 / 形状 / 個体差の許容範囲…）と1対1で対応。窯元に渡す時に迷いが出ません。'},
+        {t:'写真は「ロゴ」「REFERENCE 01」など貼る場所が決まっていて、1枚ごとにポイントを書けます。長辺1600pxのJPEGに圧縮してから送信します。'},
+        {t:'入力するたび下書きを自動保存。上部の3本バーが各ページの記入率です。'},
+        {t:this.endpoint()? '送信先が設定されています。「送信する」で Google スプレッドシート・Drive・メールへ実際に送られます。' : 'いまはデモ送信です。TweaksにApps ScriptのURLを入れると、スプレッドシート／Drive／メールへ実送信します（apps-script/SETUP.md 参照）。'},
+        {t:'最後の確認画面から任意の設問へ直接戻れます。'}
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
