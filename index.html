@@ -25,7 +25,6 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
   body{background:var(--color-bg)}
   .tk-stage{padding:0!important;gap:0!important;align-items:stretch!important}
   .tk-phone{width:100%!important;height:100dvh!important;border:none!important;box-shadow:none!important}
-  .tk-notes{display:none!important}
 }
 </style>
 </helmet>
@@ -232,17 +231,6 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
 
 </div>
 
-<div class="tk-notes" style="width:250px;flex:none;padding-top:6px">
-<div style="font:800 13px/1.3 Archivo,sans-serif;letter-spacing:.02em">TSUMUGI ORDER APP</div>
-<div style="height:2px;background:var(--color-text);margin:10px 0 14px"></div>
-<div style="font:400 12px/1.9;color:var(--color-neutral-800)">紙のコンセプトシート3ページを、1画面1問のウィザードに再構成したセルフ記入アプリです。項目名・選択肢はシートの表記をそのまま使っています。</div>
-<div style="margin-top:18px;display:flex;flex-direction:column;gap:9px">
-<sc-for list="{{ notes }}" as="n" hint-placeholder-count="4">
-<div style="display:flex;gap:9px;font:400 11.5px/1.7;color:var(--color-neutral-700)"><span style="color:var(--color-accent);font-weight:700">—</span><span>{{ n.t }}</span></div>
-</sc-for>
-</div>
-<button class="btn btn-ghost" onClick="{{ reset }}" style="margin-top:20px;min-height:38px;font-size:11px">最初から見る（下書き削除）</button>
-</div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:940},&quot;englishLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;表示&quot;},&quot;endpoint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;送信先&quot;,&quot;label&quot;:&quot;Apps Script Web App URL&quot;}}">
@@ -489,7 +477,6 @@ class Component extends DCLogic {
       hasDraft:!!d, draftAt: d? new Date(d.at).toLocaleDateString('ja-JP'):'',
       resume:()=>{ this.setState({a:d.a||{},screen:'section',i:0}); this.flash('下書きを読み込みました'); },
       save:()=>{ this.persist(this.state.a); this.flash('下書きを保存しました'); },
-      reset:()=>{ try{localStorage.removeItem(KEY);}catch(e){} this.setState({screen:'start',i:0,a:{},photos:{},draft:null}); },
       secN:sec.n, secJa:sec.ja, secEn:sec.en, secDesc:sec.desc,
       counter:String(this.state.i+1).padStart(2,'0')+' / '+STEPS.length,
       bars,
@@ -504,14 +491,7 @@ class Component extends DCLogic {
       doneFilled:nFilled+' / '+STEPS.length,
       donePhotos:nPhotos+' 枚',
       doneRef:this.state.ref||'—',
-      toast:this.state.toast,
-      notes:[
-        {t:'項目名は紙のシート（案件名 / 形状 / 個体差の許容範囲…）と1対1で対応。窯元に渡す時に迷いが出ません。'},
-        {t:'写真は「ロゴ」「REFERENCE 01」など貼る場所が決まっていて、1枚ごとにポイントを書けます。長辺1600pxのJPEGに圧縮してから送信します。'},
-        {t:'入力するたび下書きを自動保存。上部の3本バーが各ページの記入率です。'},
-        {t:this.endpoint()? '送信先が設定されています。「送信する」で Google スプレッドシート・Drive・メールへ実際に送られます。' : 'いまはデモ送信です。TweaksにApps ScriptのURLを入れると、スプレッドシート／Drive／メールへ実送信します（apps-script/SETUP.md 参照）。'},
-        {t:'最後の確認画面から任意の設問へ直接戻れます。'}
-      ]
+      toast:this.state.toast
     };
   }
 }
