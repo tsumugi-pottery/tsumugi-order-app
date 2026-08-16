@@ -13,20 +13,21 @@ Apps Script Web App  ──→ スプレッドシート（1件1行）
 
 ## 1. 受け皿を作る
 
-1. Googleドライブで**スプレッドシート**を新規作成。URLの `/d/` と `/edit` の間がシートIDです。
-2. 写真の保存先になる**フォルダ**を新規作成。URLの `folders/` の後ろがフォルダIDです。
+1. Googleドライブで**スプレッドシート**を新規作成（[sheets.new](https://sheets.new) を開くだけでOK）。URLの `/d/` と `/edit` の間がシートIDです。控えておいてください。
+2. 写真の保存先フォルダはすでに用意済みです：[このDriveフォルダ](https://drive.google.com/drive/folders/1unUjWdgtqUFw1XVnQ_oGca0AgY0WaOhT)（`apps-script/Code.gs` の `DRIVE_ID` に設定済み）。
 
 ## 2. Apps Script を設置する
 
 1. [script.google.com](https://script.google.com) で新しいプロジェクトを作成。
-2. `apps-script/Code.gs` の中身をまるごと貼り付ける。
-3. 冒頭の3つを書き換える。
+2. このリポジトリの `apps-script/Code.gs` の中身をまるごと貼り付ける（`DRIVE_ID` と通知メール宛先は設定済みです）。
+3. 冒頭の `SHEET_ID` だけ、手順1で控えたスプレッドシートIDに書き換える。
 
-   | 定数 | 入れるもの |
-   | --- | --- |
-   | `SHEET_ID` | 手順1のシートID |
-   | `DRIVE_ID` | 手順1のフォルダID |
-   | `MAIL_TO` | 通知先メールアドレス（カンマ区切りで複数可） |
+   | 定数 | 内容 | 状態 |
+   | --- | --- | --- |
+   | `SHEET_ID` | 手順1のスプレッドシートID | **要編集** |
+   | `DRIVE_ID` | 写真の保存先フォルダ | 設定済み |
+   | `MAIL_TO` | 通知メールの宛先（s.y.connect.co@gmail.com） | 設定済み |
+   | `MAIL_CC` | 通知メールのCC（m.yuri0713@gmail.com） | 設定済み |
 
 4. 右上の **デプロイ → 新しいデプロイ → 種類：ウェブアプリ**。
    - 次のユーザーとして実行：**自分**
@@ -36,7 +37,7 @@ Apps Script Web App  ──→ スプレッドシート（1件1行）
 
 ## 3. アプリに送信先を設定する
 
-デザイン画面右上の **Tweaks → 送信先 → Apps Script Web App URL** に、手順2でコピーしたURLを貼り付けます。空のままだとデモ送信（実際には送られない）のままです。
+手順2でコピーしたURLをClaudeに伝えてください。アプリ（`index.html`）の送信先デフォルト値として組み込み、GitHub Pagesに反映します。空のままだとデモ送信（実際には送られない）のままです。
 
 設定するとアプリ側の挙動が変わります。
 

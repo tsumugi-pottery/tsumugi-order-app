@@ -10,9 +10,10 @@
  */
 
 // ── 設定 ──────────────────────────────────────────────
-const SHEET_ID   = 'ここにスプレッドシートのIDを入れる';
-const DRIVE_ID   = 'ここに保存先Driveフォルダのidを入れる';
-const MAIL_TO    = 'orders@example.com';        // カンマ区切りで複数可
+const SHEET_ID   = 'ここにスプレッドシートのIDを入れる';        // 手順1で作成するスプレッドシートのID
+const DRIVE_ID   = '1unUjWdgtqUFw1XVnQ_oGca0AgY0WaOhT';   // 写真の保存先Driveフォルダ
+const MAIL_TO    = 's.y.connect.co@gmail.com';             // カンマ区切りで複数可
+const MAIL_CC    = 'm.yuri0713@gmail.com';                 // カンマ区切りで複数可（不要なら空文字に）
 const SHEET_NAME = '受注シート';
 // ─────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function notify_(data, folder) {
 
   MailApp.sendEmail({
     to: MAIL_TO,
+    cc: MAIL_CC,
     subject: '【ORDER SHEET】' + (data.store || '無題') + ' / ' + (data.project || '') + '（' + data.ref + '）',
     body: [
       'コンセプトシートが届きました。',
