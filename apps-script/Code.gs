@@ -4,8 +4,8 @@
  * 役割
  *   1. 送信内容をスプレッドシートに追記（器 1点＝1行、社内の受注管理用）
  *   2. 添付写真を Google Drive のフォルダに保存（案件フォルダ内に器ごとのサブフォルダ）
- *   3. 窯元に渡せる「発注書」（紙のオーダーシートと同じレイアウト）を自動生成
- *   4. 担当者へメール通知（発注書へのリンク付き）
+ *   3. 窯元に渡せる「仕様書」（紙のオーダーシートと同じレイアウト、器ごとに別タブ）を自動生成
+ *   4. 担当者へメール通知（仕様書へのリンク付き）
  *
  * 設置手順は SETUP.md を参照してください。
  */
@@ -119,9 +119,11 @@ function appendRow_(data, item, idx, total, folder) {
    .concat(itemKeys.map(function (k) { return itemMap[k] || ''; })));
 }
 
-// ── 発注書（窯元向け）の自動生成 ──────────────────────────
-// 紙の「TSUMUGI ORDER CONCEPT SHEET」と同じ構成（店舗・ブランドコンセプト → 器仕様（器の数だけ繰り返し）→ 製作スケジュール）
+// ── 仕様書（窯元向け）の自動生成 ──────────────────────────
+// 紙の「TSUMUGI ORDER CONCEPT SHEET」と同じ構成（店舗・ブランドコンセプト → 器仕様 → 製作スケジュール）
 // をスプレッドシートとして自動で組み立てる。テンプレートファイルは使わず、このスクリプトだけで完結する。
+// 器が複数点ある場合は、器ごとに別シート（タブ）に分ける。各タブは店舗情報・製作スケジュールも
+// 含めた自己完結の1枚なので、そのまま窯元に渡せる。
 
 const OS_INK = '#201e1d';
 const OS_ACCENT = '#ec3013';
@@ -129,21 +131,32 @@ const OS_PANEL = '#f3f2f2';
 const OS_WIDTH = 6; // レイアウトの列数（A〜F）
 
 function buildOrderSheet_(data, items, folder, sharedFileUrls, itemFileUrls) {
-  const ss = SpreadsheetApp.create('発注書 ' + (data.store || '無題') + ' ' + data.ref);
+  const ss = SpreadsheetApp.create('仕様書 ' + (data.store || '無題') + ' ' + data.ref);
   const file = DriveApp.getFileById(ss.getId());
   folder.addFile(file);
   DriveApp.getRootFolder().removeFile(file); // create()は必ずマイドライブ直下に作るので、案件フォルダへ移す
 
-  const sh = ss.getSheets()[0];
-  sh.setName('発注書');
+  const defaultSheet = ss.getSheets()[0];
+  items.forEach(function (item, idx) {
+    const tabName = items.length > 1 ? '器' + (idx + 1) : '仕様書';
+    const sh = (idx === 0) ? defaultSheet : ss.insertSheet(idx);
+    sh.setName(tabName);
+    buildItemSheet_(sh, data, item, idx, items.length, sharedFileUrls, itemFileUrls[idx] || {});
+  });
+
+  return file;
+}
+
+function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrls) {
   sh.setColumnWidths(1, 1, 130);
   sh.setColumnWidths(2, OS_WIDTH - 1, 150);
 
   const sharedMap = toMap_(data.sharedRows);
+  const m = toMap_(item.rows);
   let row = 1;
 
-  row = osTitle_(sh, row, 'TSUMUGI', 'ORDER CONCEPT SHEET — 発注書');
-  row = osMeta_(sh, row, data, items.length);
+  row = osTitle_(sh, row, 'TSUMUGI', 'ORDER CONCEPT SHEET — 仕様書' + (itemCount > 1 ? '（器' + (idx + 1) + ' / ' + itemCount + '）' : ''));
+  row = osMeta_(sh, row, data, itemCount);
   row++;
 
   row = osSection_(sh, row, '01  店舗・ブランドコンセプト / BRAND & STORE CONCEPT');
@@ -159,28 +172,24 @@ function buildOrderSheet_(data, items, folder, sharedFileUrls, itemFileUrls) {
   ]);
   row++;
 
-  items.forEach(function (item, idx) {
-    const m = toMap_(item.rows);
-    const fileUrls = itemFileUrls[idx] || {};
-    row = osSection_(sh, row, '02  器 仕様・デザイン / TABLEWARE SPECIFICATION 　－ 器' + (idx + 1) + (m.item ? '：' + m.item : '') + ' －');
-    row = osRow2_(sh, row, 'アイテム名', m.item, '使用用途', m.usage);
-    row = osRow2_(sh, row, '形状', [m.shape, m.shape_note].filter(String).join(' / '), 'サイズ', osSize_(m));
-    row = osRow2_(sh, row, '素材・土', m.material, '色・釉薬', m.glaze);
-    row = osRow2_(sh, row, '素材感・表情', m.texture, 'ロゴ・加飾', m.deco);
-    row = osRow2_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '', '予備・追加生産', m.spare ? m.spare + (m.spare_qty ? '　数量：' + m.spare_qty : '') : '');
-    row = osPhotoRow_(sh, row, [
-      { label: 'REFERENCE 01', url: fileUrls.ref1, memo: m.memo_ref1 },
-      { label: 'REFERENCE 02', url: fileUrls.ref2, memo: m.memo_ref2 },
-      { label: 'REFERENCE 03', url: fileUrls.ref3, memo: m.memo_ref3 }
-    ]);
-    row = osRow2_(sh, row, '希望単価', m.unitprice ? '¥' + m.unitprice + ' / 個' : '', '総予算', m.budget ? '¥' + m.budget : '');
-    row = osRow2_(sh, row, 'サンプル製作', m.sample ? m.sample + (m.sample_qty ? '　数量：' + m.sample_qty : '') : '', '希望納期', m.due);
-    row = osRow2_(sh, row, '食洗機・レンジ', m.dish, '梱包条件', m.packing);
-    row = osRow1_(sh, row, '個体差の許容範囲', m.tolerance);
-    row = osRow1_(sh, row, '避けたいこと（NG事項）', m.ng);
-    row = osRow1_(sh, row, '最優先事項 TOP 3', [m.p1, m.p2, m.p3].filter(String).map(function (v, i) { return (i + 1) + '. ' + v; }).join('　'));
-    row++;
-  });
+  row = osSection_(sh, row, '02  器 仕様・デザイン / TABLEWARE SPECIFICATION' + (m.item ? '　－ ' + m.item + ' －' : ''));
+  row = osRow2_(sh, row, 'アイテム名', m.item, '使用用途', m.usage);
+  row = osRow2_(sh, row, '形状', [m.shape, m.shape_note].filter(String).join(' / '), 'サイズ', osSize_(m));
+  row = osRow2_(sh, row, '素材・土', m.material, '色・釉薬', m.glaze);
+  row = osRow2_(sh, row, '素材感・表情', m.texture, 'ロゴ・加飾', m.deco);
+  row = osRow2_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '', '予備・追加生産', m.spare ? m.spare + (m.spare_qty ? '　数量：' + m.spare_qty : '') : '');
+  row = osPhotoRow_(sh, row, [
+    { label: 'REFERENCE 01', url: fileUrls.ref1, memo: m.memo_ref1 },
+    { label: 'REFERENCE 02', url: fileUrls.ref2, memo: m.memo_ref2 },
+    { label: 'REFERENCE 03', url: fileUrls.ref3, memo: m.memo_ref3 }
+  ]);
+  row = osRow2_(sh, row, '希望単価', m.unitprice ? '¥' + m.unitprice + ' / 個' : '', '総予算', m.budget ? '¥' + m.budget : '');
+  row = osRow2_(sh, row, 'サンプル製作', m.sample ? m.sample + (m.sample_qty ? '　数量：' + m.sample_qty : '') : '', '希望納期', m.due);
+  row = osRow2_(sh, row, '食洗機・レンジ', m.dish, '梱包条件', m.packing);
+  row = osRow1_(sh, row, '個体差の許容範囲', m.tolerance);
+  row = osRow1_(sh, row, '避けたいこと（NG事項）', m.ng);
+  row = osRow1_(sh, row, '最優先事項 TOP 3', [m.p1, m.p2, m.p3].filter(String).map(function (v, i) { return (i + 1) + '. ' + v; }).join('　'));
+  row++;
 
   row = osSection_(sh, row, '03  製作スケジュール / PRODUCTION SCHEDULE');
   row = osRow2_(sh, row, '希望納期', sharedMap.d_due, '納品場所', sharedMap.d_place);
@@ -192,7 +201,6 @@ function buildOrderSheet_(data, items, folder, sharedFileUrls, itemFileUrls) {
   row = osNote_(sh, row, 'NOTE　陶器は原料・釉薬・焼成条件により、サンプルと量産品の間でも色味・表情・寸法に個体差が生じる場合があります。最終サンプル承認時に許容範囲を確認させてください。');
 
   sh.setFrozenRows(0);
-  return file;
 }
 
 function osSize_(m) {
@@ -314,7 +322,7 @@ function notify_(data, items, folder, orderFile) {
       '器の点数：' + items.length + ' 点',
       '記入項目：' + totalFilled + ' 件 ／ 写真：' + totalFiles + ' 枚',
       '写真フォルダ：' + folder.getUrl(),
-      '発注書（窯元へそのまま共有できます）：' + orderFile.getUrl(),
+      '仕様書（窯元へそのまま共有できます）：' + orderFile.getUrl(),
       '',
       '──────────── 店舗・共通情報 ────────────',
       sharedLines || '（未入力）',
