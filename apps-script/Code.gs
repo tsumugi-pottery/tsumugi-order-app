@@ -2,9 +2,10 @@
  * TSUMUGI ORDER CONCEPT SHEET — 受信エンドポイント
  *
  * 役割
- *   1. 送信内容をスプレッドシートに追記（器 1点＝1行）
+ *   1. 送信内容をスプレッドシートに追記（器 1点＝1行、社内の受注管理用）
  *   2. 添付写真を Google Drive のフォルダに保存（案件フォルダ内に器ごとのサブフォルダ）
- *   3. 担当者へメール通知
+ *   3. 窯元に渡せる「発注書」（紙のオーダーシートと同じレイアウト）を自動生成
+ *   4. 担当者へメール通知（発注書へのリンク付き）
  *
  * 設置手順は SETUP.md を参照してください。
  */
@@ -21,14 +22,22 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const items = (data.items && data.items.length) ? data.items : [{ rows: [], files: [] }];
-    const folder = saveFiles_(data, items);
+    const saved = saveFiles_(data, items);
+    const folder = saved.folder;
     items.forEach(function (item, idx) { appendRow_(data, item, idx, items.length, folder); });
-    notify_(data, items, folder);
+    const orderFile = buildOrderSheet_(data, items, folder, saved.sharedFileUrls, saved.itemFileUrls);
+    notify_(data, items, folder, orderFile);
     return json_({ ok: true, ref: data.ref });
   } catch (err) {
     console.error(err);
     return json_({ ok: false, error: String(err) });
   }
+}
+
+function toMap_(rows) {
+  const m = {};
+  (rows || []).forEach(function (r) { m[r.key] = r.value; });
+  return m;
 }
 
 /** 案件フォルダを作り、共通の写真＋器ごとの写真を保存。全体の回答をanswers.txtにまとめる */
@@ -37,12 +46,18 @@ function saveFiles_(data, items) {
   const name = [stamp_(data.submittedAt), data.store || '無題', data.ref].join(' ');
   const folder = root.createFolder(name);
 
-  (data.sharedFiles || []).forEach(function (f) { saveOneFile_(folder, f); });
+  const sharedFileUrls = {};
+  (data.sharedFiles || []).forEach(function (f) {
+    sharedFileUrls[f.key] = saveOneFile_(folder, f).getUrl();
+  });
 
-  items.forEach(function (item, idx) {
-    if (!item.files || !item.files.length) return;
-    const itemFolder = folder.createFolder('器' + (idx + 1));
-    item.files.forEach(function (f) { saveOneFile_(itemFolder, f); });
+  const itemFileUrls = items.map(function (item, idx) {
+    const map = {};
+    if (item.files && item.files.length) {
+      const itemFolder = folder.createFolder('器' + (idx + 1));
+      item.files.forEach(function (f) { map[f.key] = saveOneFile_(itemFolder, f).getUrl(); });
+    }
+    return map;
   });
 
   const lines = (data.sharedRows || [])
@@ -54,7 +69,7 @@ function saveFiles_(data, items) {
   });
   folder.createFile(Utilities.newBlob(lines.join('\n'), 'text/plain', 'answers.txt'));
 
-  return folder;
+  return { folder: folder, sharedFileUrls: sharedFileUrls, itemFileUrls: itemFileUrls };
 }
 
 function saveOneFile_(folder, f) {
@@ -63,6 +78,7 @@ function saveOneFile_(folder, f) {
   const blob = Utilities.newBlob(bytes, 'image/jpeg', f.key + '.jpg');
   const file = folder.createFile(blob);
   if (f.memo) file.setDescription(f.label + ' — ' + f.memo);
+  return file;
 }
 
 /** 器 1点＝1行。店舗・共通情報の列は全行で同じ値になる */
@@ -81,10 +97,8 @@ function appendRow_(data, item, idx, total, folder) {
     sh.setFrozenRows(1);
   }
 
-  const sharedMap = {};
-  (data.sharedRows || []).forEach(function (r) { sharedMap[r.key] = r.value; });
-  const itemMap = {};
-  (item.rows || []).forEach(function (r) { itemMap[r.key] = r.value; });
+  const sharedMap = toMap_(data.sharedRows);
+  const itemMap = toMap_(item.rows);
   const sharedKeys = (data.sharedRows || []).map(function (r) { return r.key; });
   const itemKeys = (item.rows || []).map(function (r) { return r.key; });
 
@@ -105,7 +119,169 @@ function appendRow_(data, item, idx, total, folder) {
    .concat(itemKeys.map(function (k) { return itemMap[k] || ''; })));
 }
 
-function notify_(data, items, folder) {
+// ── 発注書（窯元向け）の自動生成 ──────────────────────────
+// 紙の「TSUMUGI ORDER CONCEPT SHEET」と同じ構成（店舗・ブランドコンセプト → 器仕様（器の数だけ繰り返し）→ 製作スケジュール）
+// をスプレッドシートとして自動で組み立てる。テンプレートファイルは使わず、このスクリプトだけで完結する。
+
+const OS_INK = '#201e1d';
+const OS_ACCENT = '#ec3013';
+const OS_PANEL = '#f3f2f2';
+const OS_WIDTH = 6; // レイアウトの列数（A〜F）
+
+function buildOrderSheet_(data, items, folder, sharedFileUrls, itemFileUrls) {
+  const ss = SpreadsheetApp.create('発注書 ' + (data.store || '無題') + ' ' + data.ref);
+  const file = DriveApp.getFileById(ss.getId());
+  folder.addFile(file);
+  DriveApp.getRootFolder().removeFile(file); // create()は必ずマイドライブ直下に作るので、案件フォルダへ移す
+
+  const sh = ss.getSheets()[0];
+  sh.setName('発注書');
+  sh.setColumnWidths(1, 1, 130);
+  sh.setColumnWidths(2, OS_WIDTH - 1, 150);
+
+  const sharedMap = toMap_(data.sharedRows);
+  let row = 1;
+
+  row = osTitle_(sh, row, 'TSUMUGI', 'ORDER CONCEPT SHEET — 発注書');
+  row = osMeta_(sh, row, data, items.length);
+  row++;
+
+  row = osSection_(sh, row, '01  店舗・ブランドコンセプト / BRAND & STORE CONCEPT');
+  row = osRow2_(sh, row, '案件名', data.project, '作成日', Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy年MM月dd日'));
+  row = osRow2_(sh, row, 'お店の名前', data.store, 'ご担当者', data.contact + (data.contactTel ? '（' + data.contactTel + '）' : ''));
+  row = osRow1_(sh, row, 'お店のコンセプト', sharedMap.concept);
+  row = osRow1_(sh, row, 'デザインの方向', sharedMap.direction);
+  row = osRow2_(sh, row, '主な料理', sharedMap.dishes, '使用シーン', sharedMap.scene);
+  row = osRow2_(sh, row, '盛付イメージ', sharedMap.plating, '特記事項', sharedMap.notes1);
+  row = osPhotoRow_(sh, row, [
+    { label: 'ロゴ', url: sharedFileUrls.logo },
+    { label: '店舗写真・内装', url: sharedFileUrls.atmos }
+  ]);
+  row++;
+
+  items.forEach(function (item, idx) {
+    const m = toMap_(item.rows);
+    const fileUrls = itemFileUrls[idx] || {};
+    row = osSection_(sh, row, '02  器 仕様・デザイン / TABLEWARE SPECIFICATION 　－ 器' + (idx + 1) + (m.item ? '：' + m.item : '') + ' －');
+    row = osRow2_(sh, row, 'アイテム名', m.item, '使用用途', m.usage);
+    row = osRow2_(sh, row, '形状', [m.shape, m.shape_note].filter(String).join(' / '), 'サイズ', osSize_(m));
+    row = osRow2_(sh, row, '素材・土', m.material, '色・釉薬', m.glaze);
+    row = osRow2_(sh, row, '素材感・表情', m.texture, 'ロゴ・加飾', m.deco);
+    row = osRow2_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '', '予備・追加生産', m.spare ? m.spare + (m.spare_qty ? '　数量：' + m.spare_qty : '') : '');
+    row = osPhotoRow_(sh, row, [
+      { label: 'REFERENCE 01', url: fileUrls.ref1, memo: m.memo_ref1 },
+      { label: 'REFERENCE 02', url: fileUrls.ref2, memo: m.memo_ref2 },
+      { label: 'REFERENCE 03', url: fileUrls.ref3, memo: m.memo_ref3 }
+    ]);
+    row = osRow2_(sh, row, '希望単価', m.unitprice ? '¥' + m.unitprice + ' / 個' : '', '総予算', m.budget ? '¥' + m.budget : '');
+    row = osRow2_(sh, row, 'サンプル製作', m.sample ? m.sample + (m.sample_qty ? '　数量：' + m.sample_qty : '') : '', '希望納期', m.due);
+    row = osRow2_(sh, row, '食洗機・レンジ', m.dish, '梱包条件', m.packing);
+    row = osRow1_(sh, row, '個体差の許容範囲', m.tolerance);
+    row = osRow1_(sh, row, '避けたいこと（NG事項）', m.ng);
+    row = osRow1_(sh, row, '最優先事項 TOP 3', [m.p1, m.p2, m.p3].filter(String).map(function (v, i) { return (i + 1) + '. ' + v; }).join('　'));
+    row++;
+  });
+
+  row = osSection_(sh, row, '03  製作スケジュール / PRODUCTION SCHEDULE');
+  row = osRow2_(sh, row, '希望納期', sharedMap.d_due, '納品場所', sharedMap.d_place);
+  row = osRow2_(sh, row, '納品先担当者', sharedMap.d_person, '連絡先', sharedMap.d_tel);
+  row = osRow1_(sh, row, '備考', sharedMap.remarks);
+  row = osRow2_(sh, row, '承認日', '　　　年　　月　　日', '承認者', '');
+  row++;
+
+  row = osNote_(sh, row, 'NOTE　陶器は原料・釉薬・焼成条件により、サンプルと量産品の間でも色味・表情・寸法に個体差が生じる場合があります。最終サンプル承認時に許容範囲を確認させてください。');
+
+  sh.setFrozenRows(0);
+  return file;
+}
+
+function osSize_(m) {
+  const parts = [];
+  if (m.size_d) parts.push('Φ' + m.size_d);
+  if (m.size_w) parts.push('W' + m.size_w);
+  if (m.size_h) parts.push('H' + m.size_h);
+  return parts.length ? parts.join(' × ') + ' mm' : '';
+}
+
+function osTitle_(sh, row, brand, subtitle) {
+  sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(brand)
+    .setFontSize(20).setFontWeight('bold').setFontColor(OS_INK);
+  row++;
+  sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(subtitle)
+    .setFontSize(11).setFontColor(OS_ACCENT).setFontWeight('bold');
+  row++;
+  sh.setRowHeight(row, 4);
+  return row + 1;
+}
+
+function osMeta_(sh, row, data, itemCount) {
+  sh.getRange(row, 1).setValue('受付番号').setFontWeight('bold');
+  sh.getRange(row, 2).setValue(data.ref);
+  sh.getRange(row, 3).setValue('受付日時').setFontWeight('bold');
+  sh.getRange(row, 4).setValue(stamp_(data.submittedAt));
+  sh.getRange(row, 5).setValue('器 点数').setFontWeight('bold');
+  sh.getRange(row, 6).setValue(itemCount + ' 点');
+  return row + 1;
+}
+
+function osSection_(sh, row, title) {
+  sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(title)
+    .setBackground(OS_INK).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11)
+    .setVerticalAlignment('middle');
+  sh.setRowHeight(row, 26);
+  return row + 1;
+}
+
+function osLabelCell_(cell, text) {
+  cell.setValue(text).setFontWeight('bold').setBackground(OS_PANEL).setVerticalAlignment('top');
+}
+function osValueCell_(range, text) {
+  range.setValue(text || '').setWrap(true).setVerticalAlignment('top');
+}
+
+/** ラベル/値 のペアを1行に2組 */
+function osRow2_(sh, row, l1, v1, l2, v2) {
+  const half = Math.floor(OS_WIDTH / 2);
+  osLabelCell_(sh.getRange(row, 1), l1);
+  osValueCell_(sh.getRange(row, 2, 1, half - 1), v1);
+  osLabelCell_(sh.getRange(row, 1 + half), l2);
+  osValueCell_(sh.getRange(row, 1 + half + 1, 1, OS_WIDTH - half - 1), v2);
+  return row + 1;
+}
+
+/** ラベル/値 を1行いっぱいに1組（長文向け） */
+function osRow1_(sh, row, l1, v1) {
+  osLabelCell_(sh.getRange(row, 1), l1);
+  osValueCell_(sh.getRange(row, 2, 1, OS_WIDTH - 1), v1);
+  return row + 1;
+}
+
+/** 写真参照行：Driveに保存済みの写真へのリンクとメモを並べる */
+function osPhotoRow_(sh, row, photos) {
+  const cols = Math.floor(OS_WIDTH / photos.length);
+  photos.forEach(function (p, i) {
+    const c = 1 + i * cols;
+    const span = (i === photos.length - 1) ? OS_WIDTH - c + 1 : cols;
+    const cell = sh.getRange(row, c, 1, span);
+    if (p.url) {
+      const label = p.label + (p.memo ? '（' + p.memo + '）' : '');
+      cell.setFormula('=HYPERLINK("' + p.url + '","📎 ' + label.replace(/"/g, "'") + '")');
+    } else {
+      cell.setValue(p.label + '：未添付').setFontColor('#9b9797');
+    }
+    cell.setWrap(true).setVerticalAlignment('top');
+  });
+  return row + 1;
+}
+
+function osNote_(sh, row, text) {
+  const range = sh.getRange(row, 1, 1, OS_WIDTH).merge();
+  range.setValue(text).setWrap(true).setFontSize(9).setFontColor('#605d5d')
+    .setBorder(true, false, false, false, false, false, OS_INK, SpreadsheetApp.BorderStyle.SOLID_THICK);
+  return row + 1;
+}
+
+function notify_(data, items, folder, orderFile) {
   const totalFilled = (data.sharedRows || []).filter(function (r) { return r.value; }).length +
     items.reduce(function (s, it) { return s + (it.rows || []).filter(function (r) { return r.value; }).length; }, 0);
   const totalFiles = (data.sharedFiles || []).length +
@@ -138,6 +314,7 @@ function notify_(data, items, folder) {
       '器の点数：' + items.length + ' 点',
       '記入項目：' + totalFilled + ' 件 ／ 写真：' + totalFiles + ' 枚',
       '写真フォルダ：' + folder.getUrl(),
+      '発注書（窯元へそのまま共有できます）：' + orderFile.getUrl(),
       '',
       '──────────── 店舗・共通情報 ────────────',
       sharedLines || '（未入力）',
