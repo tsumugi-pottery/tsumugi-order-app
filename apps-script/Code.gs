@@ -159,7 +159,7 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
   row = osMeta_(sh, row, data, itemCount);
   row++;
 
-  row = osSection_(sh, row, '01  店舗・ブランドコンセプト / BRAND & STORE CONCEPT');
+  row = osSection_(sh, row, '01', '店舗・ブランドコンセプト / BRAND & STORE CONCEPT');
   row = osRow2_(sh, row, '案件名', data.project, '作成日', Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy年MM月dd日'));
   row = osRow2_(sh, row, 'お店の名前', data.store, 'ご担当者', data.contact + (data.contactTel ? '（' + data.contactTel + '）' : ''));
   row = osRow1_(sh, row, 'お店のコンセプト', sharedMap.concept);
@@ -172,7 +172,7 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
   ]);
   row++;
 
-  row = osSection_(sh, row, '02  器 仕様・デザイン / TABLEWARE SPECIFICATION' + (m.item ? '　－ ' + m.item + ' －' : ''));
+  row = osSection_(sh, row, '02', '器 仕様・デザイン / TABLEWARE SPECIFICATION' + (m.item ? '　－ ' + m.item + ' －' : ''));
   row = osRow2_(sh, row, 'アイテム名', m.item, '使用用途', m.usage);
   row = osRow2_(sh, row, '形状', [m.shape, m.shape_note].filter(String).join(' / '), 'サイズ', osSize_(m));
   row = osRow2_(sh, row, '素材・土', m.material, '色・釉薬', m.glaze);
@@ -191,7 +191,7 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
   row = osRow1_(sh, row, '最優先事項 TOP 3', [m.p1, m.p2, m.p3].filter(String).map(function (v, i) { return (i + 1) + '. ' + v; }).join('　'));
   row++;
 
-  row = osSection_(sh, row, '03  製作スケジュール / PRODUCTION SCHEDULE');
+  row = osSection_(sh, row, '03', '製作スケジュール / PRODUCTION SCHEDULE');
   row = osRow2_(sh, row, '希望納期', sharedMap.d_due, '納品場所', sharedMap.d_place);
   row = osRow2_(sh, row, '納品先担当者', sharedMap.d_person, '連絡先', sharedMap.d_tel);
   row = osRow1_(sh, row, '備考', sharedMap.remarks);
@@ -200,6 +200,8 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
 
   row = osNote_(sh, row, 'NOTE　陶器は原料・釉薬・焼成条件により、サンプルと量産品の間でも色味・表情・寸法に個体差が生じる場合があります。最終サンプル承認時に許容範囲を確認させてください。');
 
+  sh.setHiddenGridlines(true);
+  sh.getRange(1, 1, row - 1, OS_WIDTH).setBorder(true, true, true, true, false, false, OS_INK, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
   sh.setFrozenRows(0);
 }
 
@@ -211,41 +213,58 @@ function osSize_(m) {
   return parts.length ? parts.join(' × ') + ' mm' : '';
 }
 
+/** 帯状の見出し（ロゴエリア）：黒帯にTSUMUGI、下に赤い罫線と英字サブタイトル */
 function osTitle_(sh, row, brand, subtitle) {
   sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(brand)
-    .setFontSize(20).setFontWeight('bold').setFontColor(OS_INK);
+    .setBackground(OS_INK).setFontColor('#ffffff')
+    .setFontSize(22).setFontWeight('bold').setVerticalAlignment('middle');
+  sh.setRowHeight(row, 44);
   row++;
+
   sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(subtitle)
-    .setFontSize(11).setFontColor(OS_ACCENT).setFontWeight('bold');
+    .setFontSize(10).setFontColor(OS_ACCENT).setFontWeight('bold').setVerticalAlignment('middle')
+    .setBorder(false, false, true, false, false, false, OS_ACCENT, SpreadsheetApp.BorderStyle.SOLID_THICK);
+  sh.setRowHeight(row, 22);
   row++;
-  sh.setRowHeight(row, 4);
+
+  sh.setRowHeight(row, 6);
   return row + 1;
 }
 
 function osMeta_(sh, row, data, itemCount) {
-  sh.getRange(row, 1).setValue('受付番号').setFontWeight('bold');
-  sh.getRange(row, 2).setValue(data.ref);
-  sh.getRange(row, 3).setValue('受付日時').setFontWeight('bold');
-  sh.getRange(row, 4).setValue(stamp_(data.submittedAt));
-  sh.getRange(row, 5).setValue('器 点数').setFontWeight('bold');
-  sh.getRange(row, 6).setValue(itemCount + ' 点');
+  const labels = ['受付番号', '受付日時', '器 点数'];
+  const values = [data.ref, stamp_(data.submittedAt), itemCount + ' 点'];
+  labels.forEach(function (l, i) {
+    sh.getRange(row, 1 + i * 2).setValue(l).setFontWeight('bold').setFontColor('#605d5d').setFontSize(9);
+    sh.getRange(row, 2 + i * 2).setValue(values[i]).setFontSize(9);
+  });
   return row + 1;
 }
 
-function osSection_(sh, row, title) {
-  sh.getRange(row, 1, 1, OS_WIDTH).merge().setValue(title)
+/** セクション見出し：大きな番号バッジ（赤）＋黒帯のタイトル */
+function osSection_(sh, row, num, title) {
+  sh.getRange(row, 1).setValue(num)
+    .setBackground(OS_ACCENT).setFontColor('#ffffff').setFontWeight('bold').setFontSize(15)
+    .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.getRange(row, 2, 1, OS_WIDTH - 1).merge().setValue(title)
     .setBackground(OS_INK).setFontColor('#ffffff').setFontWeight('bold').setFontSize(11)
     .setVerticalAlignment('middle');
-  sh.setRowHeight(row, 26);
+  sh.setRowHeight(row, 30);
   return row + 1;
 }
 
 function osLabelCell_(cell, text) {
-  cell.setValue(text).setFontWeight('bold').setBackground(OS_PANEL).setVerticalAlignment('top');
+  cell.setValue(text).setFontWeight('bold').setFontColor('#605d5d').setFontSize(9)
+    .setBackground(OS_PANEL).setVerticalAlignment('top');
 }
 function osValueCell_(range, text) {
   const target = range.getNumColumns() > 1 ? range.merge() : range;
-  target.setValue(text || '').setWrap(true).setVerticalAlignment('top');
+  target.setValue(text || '').setWrap(true).setVerticalAlignment('top').setFontSize(10);
+}
+
+/** グリッド線を隠している分、行の下に薄い罫線を引いて表として読めるようにする */
+function osRowBorder_(sh, row) {
+  sh.getRange(row, 1, 1, OS_WIDTH).setBorder(false, false, true, false, false, false, '#d7d3d3', SpreadsheetApp.BorderStyle.SOLID);
 }
 
 /** ラベル/値 のペアを1行に2組 */
@@ -255,6 +274,7 @@ function osRow2_(sh, row, l1, v1, l2, v2) {
   osValueCell_(sh.getRange(row, 2, 1, half - 1), v1);
   osLabelCell_(sh.getRange(row, 1 + half), l2);
   osValueCell_(sh.getRange(row, 1 + half + 1, 1, OS_WIDTH - half - 1), v2);
+  osRowBorder_(sh, row);
   return row + 1;
 }
 
@@ -262,6 +282,7 @@ function osRow2_(sh, row, l1, v1, l2, v2) {
 function osRow1_(sh, row, l1, v1) {
   osLabelCell_(sh.getRange(row, 1), l1);
   osValueCell_(sh.getRange(row, 2, 1, OS_WIDTH - 1), v1);
+  osRowBorder_(sh, row);
   return row + 1;
 }
 
@@ -279,8 +300,9 @@ function osPhotoRow_(sh, row, photos) {
     } else {
       cell.setValue(p.label + '：未添付').setFontColor('#9b9797');
     }
-    cell.setWrap(true).setVerticalAlignment('top');
+    cell.setWrap(true).setVerticalAlignment('top').setFontSize(10);
   });
+  osRowBorder_(sh, row);
   return row + 1;
 }
 
