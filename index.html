@@ -189,12 +189,26 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
 </div>
 </sc-if>
 
+<sc-if value="{{ isItemDone }}">
+<div data-screen-label="Item added" class="tk" style="flex:1;overflow:auto;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;animation:tkin .3s ease both">
+<div style="font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;color:var(--color-accent-700)">ITEM ADDED</div>
+<div style="margin-top:12px;font:700 24px/1.5">この器を登録しました</div>
+<div style="margin-top:10px;font:400 13px/1.9;color:var(--color-neutral-800)">現在 {{ itemCount }} 点登録されています。続けて別の器を登録するか、納品情報の入力に進んでください。</div>
+<button class="btn btn-primary btn-block" onClick="{{ addAnotherItem }}" style="min-height:52px;margin-top:26px">＋ もう1点、器を追加する</button>
+<button class="btn btn-secondary btn-block" onClick="{{ finishItems }}" style="min-height:48px;margin-top:10px">納品情報の入力に進む</button>
+<button class="btn btn-ghost" onClick="{{ back }}" style="margin-top:14px;min-height:38px;font-size:11px;align-self:flex-start">戻って直前の内容を修正する</button>
+</div>
+</sc-if>
+
 <sc-if value="{{ isDone }}">
 <div data-screen-label="Complete" class="tk" style="flex:1;overflow:auto;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;animation:tkin .3s ease both">
 <div style="width:44px;height:44px;background:var(--color-accent)"></div>
 <div style="margin-top:24px;font:700 26px/1.5">送信しました</div>
 <div style="margin-top:14px;font:400 14px/1.95;color:var(--color-neutral-800)">ご記入ありがとうございます。担当より2営業日以内にご連絡し、サンプル製作の進め方をご相談させていただきます。</div>
 <div style="height:2px;background:var(--color-text);margin:24px 0 0"></div>
+<div style="display:flex;padding:14px 0;border-bottom:1px solid var(--color-neutral-300);justify-content:space-between">
+<span style="font:500 12px/1.4;color:var(--color-neutral-700)">登録した器</span><span style="font:600 13px/1.4 Archivo,sans-serif">{{ doneItems }}</span>
+</div>
 <div style="display:flex;padding:14px 0;border-bottom:1px solid var(--color-neutral-300);justify-content:space-between">
 <span style="font:500 12px/1.4;color:var(--color-neutral-700)">記入項目</span><span style="font:600 13px/1.4 Archivo,sans-serif">{{ doneFilled }}</span>
 </div>
@@ -234,53 +248,60 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:940},&quot;englishLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;表示&quot;},&quot;endpoint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;https://script.google.com/macros/s/AKfycby0UAavBAIZwzq8E5r42cg6pJXpXNM8Vvd3Af7CzIT5LV60RkX2EM4cLm3Mt0wW703c/exec&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;送信先&quot;,&quot;label&quot;:&quot;Apps Script Web App URL&quot;}}">
-const SEC = [
-  {n:'01',ja:'店舗・ブランドコンセプト',en:'BRAND & STORE CONCEPT',desc:'器づくりの背景となる、お店の世界観・料理・空間を共有します。'},
-  {n:'02',ja:'器 仕様・デザイン',en:'TABLEWARE SPECIFICATION',desc:'形状・素材・表情・数量・価格条件を具体化し、窯元との共通言語にします。'},
-  {n:'03',ja:'製作スケジュール',en:'PRODUCTION SCHEDULE',desc:'サンプル承認から量産・検品・納品までの進行を確認します。'}
-];
-
-const STEPS = [
-  {s:0,g:'案件情報 / PROJECT',ja:'今回のご依頼のお名前を教えてください',en:'PROJECT',f:[{id:'project',ph:'例：秋の会席 新調'}]},
-  {s:0,g:'案件情報 / PROJECT',ja:'お店の名前',en:'STORE',f:[{id:'store',ph:'例：紬 銀座'}]},
-  {s:0,g:'案件情報 / PROJECT',ja:'ご担当者とご連絡先',en:'CONTACT',f:[{id:'contact',l:'ご担当者',ph:'お名前'},{id:'contact_tel',l:'連絡先',ph:'電話番号 / メール',mode:'tel'}]},
-  {s:0,g:'ロゴ・店舗イメージ',ja:'ロゴと店内の写真を添えてください',en:'LOGO & ATMOSPHERE',help:'内装パースや参考画像でも構いません。空間の明るさや素材感が伝わるものが理想です。',p:[
+/* 01: 店舗・ブランドコンセプト — 1回だけ入力 */
+const PRE_STEPS = [
+  {g:'案件情報 / PROJECT',ja:'今回のご依頼のお名前を教えてください',en:'PROJECT',f:[{id:'project',ph:'例：秋の会席 新調'}]},
+  {g:'案件情報 / PROJECT',ja:'お店の名前',en:'STORE',f:[{id:'store',ph:'例：紬 銀座'}]},
+  {g:'案件情報 / PROJECT',ja:'ご担当者とご連絡先',en:'CONTACT',f:[{id:'contact',l:'ご担当者',ph:'お名前'},{id:'contact_tel',l:'連絡先',ph:'電話番号 / メール',mode:'tel'}]},
+  {g:'ロゴ・店舗イメージ',ja:'ロゴと店内の写真を添えてください',en:'LOGO & ATMOSPHERE',help:'内装パースや参考画像でも構いません。空間の明るさや素材感が伝わるものが理想です。',p:[
     {id:'logo',en:'LOGO',ja:'ロゴ画像',hint:'ai / png / jpg'},
     {id:'atmos',en:'STORE ATMOSPHERE / INTERIOR',ja:'店舗写真・内装',hint:'店内 / 卓上 / 照明'}]},
-  {s:0,g:'お店のコンセプト',ja:'お店が大切にしていることを聞かせてください',en:'STORE CONCEPT',help:'ブランドストーリー / 価値 / ターゲット / 料理の特徴など',a:[{id:'concept',ph:'例：素材の力を引き出す、静かな和食。40代以上のお客様が中心で…'}]},
-  {s:0,g:'デザインの方向',ja:'今回の器で表現したいこと',en:'DESIGN DIRECTION',help:'空間や料理との関係、器で表現したい印象・キーワード',a:[{id:'direction',ph:'例：余白のある盛付、土の温度が残る質感、料理の色が締まる釉薬'}]},
-  {s:0,g:'料理・提供メニュー / MENU',ja:'主な料理',en:'MENU',f:[{id:'dishes',ph:'例：先付、造り、炊合せ'}]},
-  {s:0,g:'料理・提供メニュー / MENU',ja:'使用シーン',en:'USAGE',f:[{id:'scene',ph:'例：コース前半、夜のみ使用'}]},
-  {s:0,g:'料理・提供メニュー / MENU',ja:'盛付イメージ',en:'PLATING',f:[{id:'plating',ph:'例：中央に低く、余白を大きく'}]},
-  {s:0,g:'料理・提供メニュー / MENU',ja:'特記事項',en:'NOTES',a:[{id:'notes1',ph:'その他、共有しておきたいこと'}]},
+  {g:'お店のコンセプト',ja:'お店が大切にしていることを聞かせてください',en:'STORE CONCEPT',help:'ブランドストーリー / 価値 / ターゲット / 料理の特徴など',a:[{id:'concept',ph:'例：素材の力を引き出す、静かな和食。40代以上のお客様が中心で…'}]},
+  {g:'デザインの方向',ja:'今回の器で表現したいこと',en:'DESIGN DIRECTION',help:'空間や料理との関係、器で表現したい印象・キーワード',a:[{id:'direction',ph:'例：余白のある盛付、土の温度が残る質感、料理の色が締まる釉薬'}]},
+  {g:'料理・提供メニュー / MENU',ja:'主な料理',en:'MENU',f:[{id:'dishes',ph:'例：先付、造り、炊合せ'}]},
+  {g:'料理・提供メニュー / MENU',ja:'使用シーン',en:'USAGE',f:[{id:'scene',ph:'例：コース前半、夜のみ使用'}]},
+  {g:'料理・提供メニュー / MENU',ja:'盛付イメージ',en:'PLATING',f:[{id:'plating',ph:'例：中央に低く、余白を大きく'}]},
+  {g:'料理・提供メニュー / MENU',ja:'特記事項',en:'NOTES',a:[{id:'notes1',ph:'その他、共有しておきたいこと'}]}
+];
 
-  {s:1,g:'基本仕様 / SPECIFICATION',ja:'アイテム名と使用用途',en:'ITEM',f:[{id:'item',l:'アイテム名',ph:'例：八寸皿'},{id:'usage',l:'使用用途',ph:'例：先付の盛皿'}]},
-  {s:1,g:'基本仕様 / SPECIFICATION',ja:'形状',en:'SHAPE',o:['丸','楕円','角','リム','高台','その他'],oid:'shape',f:[{id:'shape_note',l:'補足',ph:'選んだ形状の補足（任意）'}]},
-  {s:1,g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
-  {s:1,g:'素材・表情',ja:'素材・土',en:'MATERIAL',f:[{id:'material',ph:'例：信楽の粗い土'}]},
-  {s:1,g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
-  {s:1,g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
-  {s:1,g:'素材・表情',ja:'ロゴ・加飾',en:'DECORATION',f:[{id:'deco',ph:'例：高台内に印判で小さく'}]},
-  {s:1,g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
-  {s:1,g:'数量 / QUANTITY',ja:'予備・追加生産',en:'SPARE / REORDER',o:['有','無'],oid:'spare',f:[{id:'spare_qty',l:'数量',unit:'個',mode:'numeric'}]},
-  {s:1,g:'イメージ写真 / REFERENCE',ja:'イメージに近い器の写真を3枚まで',en:'REFERENCE IMAGES',help:'完成形でなくて構いません。「この色」「この縁の形」など、1枚ごとにポイントを書き添えてください。',p:[
+/* 02: 器 仕様・デザイン — 器1点ごとに繰り返す */
+const ITEM_STEPS = [
+  {g:'基本仕様 / SPECIFICATION',ja:'アイテム名と使用用途',en:'ITEM',f:[{id:'item',l:'アイテム名',ph:'例：八寸皿'},{id:'usage',l:'使用用途',ph:'例：先付の盛皿'}]},
+  {g:'基本仕様 / SPECIFICATION',ja:'形状',en:'SHAPE',o:['丸','楕円','角','リム','高台','その他'],oid:'shape',f:[{id:'shape_note',l:'補足',ph:'選んだ形状の補足（任意）'}]},
+  {g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
+  {g:'素材・表情',ja:'素材・土',en:'MATERIAL',f:[{id:'material',ph:'例：信楽の粗い土'}]},
+  {g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
+  {g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
+  {g:'素材・表情',ja:'ロゴ・加飾',en:'DECORATION',f:[{id:'deco',ph:'例：高台内に印判で小さく'}]},
+  {g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
+  {g:'数量 / QUANTITY',ja:'予備・追加生産',en:'SPARE / REORDER',o:['有','無'],oid:'spare',f:[{id:'spare_qty',l:'数量',unit:'個',mode:'numeric'}]},
+  {g:'イメージ写真 / REFERENCE',ja:'イメージに近い器の写真を3枚まで',en:'REFERENCE IMAGES',help:'完成形でなくて構いません。「この色」「この縁の形」など、1枚ごとにポイントを書き添えてください。',p:[
     {id:'ref1',en:'REFERENCE 01',ja:'参考写真',hint:'色 / 釉薬'},
     {id:'ref2',en:'REFERENCE 02',ja:'参考写真',hint:'形状 / 縁'},
     {id:'ref3',en:'REFERENCE 03',ja:'参考写真',hint:'質感 / 盛付'}]},
-  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
-  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample',f:[{id:'sample_qty',l:'数量',unit:'個',mode:'numeric'}]},
-  {s:1,g:'条件・品質基準 / COMMERCIAL',ja:'希望納期',en:'DUE DATE',f:[{id:'due',ph:'例：2026年11月20日'}]},
-  {s:1,g:'条件・品質基準 / QUALITY',ja:'食洗機・レンジ対応',en:'DISHWASHER / MICROWAVE',o:['必須','不要','要相談'],oid:'dish'},
-  {s:1,g:'条件・品質基準 / QUALITY',ja:'梱包条件',en:'PACKING',f:[{id:'packing',ph:'例：1枚ずつ紙包み、6枚1箱'}]},
-  {s:1,g:'個体差・NG事項 / TOLERANCE',ja:'個体差の許容範囲',en:'TOLERANCE',help:'色ムラ / 釉薬 / 形状 / 寸法など',a:[{id:'tolerance',ph:'例：色ムラは景色として歓迎。寸法は±3mmまで。'}]},
-  {s:1,g:'個体差・NG事項 / TOLERANCE',ja:'避けたいこと（NG事項）',en:'NG',help:'避けたい色・艶・表情・形状など',a:[{id:'ng',ph:'例：全面の強い光沢、白すぎる釉'}]},
-  {s:1,g:'優先順位 / PRIORITY',ja:'最優先事項 TOP 3',en:'PRIORITY TOP 3',help:'すべてを両立できない場合、この順に優先します。',f:[{id:'p1',l:'1',ph:'例：釉薬の色'},{id:'p2',l:'2',ph:'例：縁の薄さ'},{id:'p3',l:'3',ph:'例：納期'}]},
-
-  {s:2,g:'納品情報 / DELIVERY',ja:'希望納期',en:'DUE DATE',f:[{id:'d_due',ph:'例：2026年12月10日'}]},
-  {s:2,g:'納品情報 / DELIVERY',ja:'納品場所',en:'DELIVERY ADDRESS',f:[{id:'d_place',ph:'住所・店舗名'}]},
-  {s:2,g:'納品情報 / DELIVERY',ja:'納品先のご担当者と連絡先',en:'RECIPIENT',f:[{id:'d_person',l:'納品先担当者',ph:'お名前'},{id:'d_tel',l:'連絡先',ph:'電話番号',mode:'tel'}]},
-  {s:2,g:'最終承認・備考 / NOTES',ja:'備考',en:'NOTES',help:'追加条件、量産時の注意事項、変更履歴など',a:[{id:'remarks',ph:'ご自由にお書きください'}]}
+  {g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
+  {g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample',f:[{id:'sample_qty',l:'数量',unit:'個',mode:'numeric'}]},
+  {g:'条件・品質基準 / COMMERCIAL',ja:'希望納期',en:'DUE DATE',f:[{id:'due',ph:'例：2026年11月20日'}]},
+  {g:'条件・品質基準 / QUALITY',ja:'食洗機・レンジ対応',en:'DISHWASHER / MICROWAVE',o:['必須','不要','要相談'],oid:'dish'},
+  {g:'条件・品質基準 / QUALITY',ja:'梱包条件',en:'PACKING',f:[{id:'packing',ph:'例：1枚ずつ紙包み、6枚1箱'}]},
+  {g:'個体差・NG事項 / TOLERANCE',ja:'個体差の許容範囲',en:'TOLERANCE',help:'色ムラ / 釉薬 / 形状 / 寸法など',a:[{id:'tolerance',ph:'例：色ムラは景色として歓迎。寸法は±3mmまで。'}]},
+  {g:'個体差・NG事項 / TOLERANCE',ja:'避けたいこと（NG事項）',en:'NG',help:'避けたい色・艶・表情・形状など',a:[{id:'ng',ph:'例：全面の強い光沢、白すぎる釉'}]},
+  {g:'優先順位 / PRIORITY',ja:'最優先事項 TOP 3',en:'PRIORITY TOP 3',help:'すべてを両立できない場合、この順に優先します。',f:[{id:'p1',l:'1',ph:'例：釉薬の色'},{id:'p2',l:'2',ph:'例：縁の薄さ'},{id:'p3',l:'3',ph:'例：納期'}]}
 ];
+
+/* 03: 製作スケジュール — 1回だけ入力 */
+const POST_STEPS = [
+  {g:'納品情報 / DELIVERY',ja:'希望納期',en:'DUE DATE',f:[{id:'d_due',ph:'例：2026年12月10日'}]},
+  {g:'納品情報 / DELIVERY',ja:'納品場所',en:'DELIVERY ADDRESS',f:[{id:'d_place',ph:'住所・店舗名'}]},
+  {g:'納品情報 / DELIVERY',ja:'納品先のご担当者と連絡先',en:'RECIPIENT',f:[{id:'d_person',l:'納品先担当者',ph:'お名前'},{id:'d_tel',l:'連絡先',ph:'電話番号',mode:'tel'}]},
+  {g:'最終承認・備考 / NOTES',ja:'備考',en:'NOTES',help:'追加条件、量産時の注意事項、変更履歴など',a:[{id:'remarks',ph:'ご自由にお書きください'}]}
+];
+
+const SECINFO = {
+  pre:  {n:'01',ja:'店舗・ブランドコンセプト',en:'BRAND & STORE CONCEPT',desc:'器づくりの背景となる、お店の世界観・料理・空間を共有します。'},
+  item: {n:'02',ja:'器 仕様・デザイン',en:'TABLEWARE SPECIFICATION',desc:'形状・素材・表情・数量・価格条件を具体化し、窯元との共通言語にします。'},
+  post: {n:'03',ja:'製作スケジュール',en:'PRODUCTION SCHEDULE',desc:'サンプル承認から量産・検品・納品までの進行を確認します。'}
+};
 
 const KEY = 'tsumugi_draft_v1';
 const EPKEY = 'tsumugi_endpoint';
@@ -307,47 +328,104 @@ function compress(file, max, quality){
   });
 }
 
+function phaseSteps(phase){ return phase==='pre'?PRE_STEPS : phase==='item'?ITEM_STEPS : POST_STEPS; }
+
 class Component extends DCLogic {
-  state = {screen:'start',i:0,a:{},photos:{},toast:'',draft:null,sending:false,err:'',ref:''};
+  state = {
+    screen:'start', phase:'pre', i:0, itemIndex:0,
+    shared:{}, sharedPhotos:{}, items:[{a:{},photos:{}}],
+    toast:'', draft:null, sending:false, err:'', ref:''
+  };
 
   componentDidMount(){
     try{const raw=localStorage.getItem(KEY); if(raw) this.setState({draft:JSON.parse(raw)});}catch(e){}
   }
-  persist(a){
-    try{localStorage.setItem(KEY,JSON.stringify({a,at:Date.now()}));}catch(e){}
-  }
-  set(id,v){
-    const a={...this.state.a,[id]:v};
-    this.setState({a});
-    this.persist(a);
+  persist(){
+    try{
+      localStorage.setItem(KEY, JSON.stringify({
+        shared:this.state.shared,
+        items:this.state.items.map(it=>({a:it.a})),
+        at:Date.now()
+      }));
+    }catch(e){}
   }
   flash(t){ this.setState({toast:t}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),1600); }
 
-  filled(st){
-    const ids=[...(st.f||[]),...(st.a||[])].map(x=>x.id);
-    if(st.oid) ids.push(st.oid);
-    if(ids.some(id=>(this.state.a[id]||'').trim())) return true;
-    return (st.p||[]).some(p=>this.state.photos[p.id]);
+  currentAnswers(){ return this.state.phase==='item' ? (this.state.items[this.state.itemIndex]||{a:{}}).a : this.state.shared; }
+  currentPhotos(){ return this.state.phase==='item' ? (this.state.items[this.state.itemIndex]||{photos:{}}).photos : this.state.sharedPhotos; }
+
+  setAnswer(id,v){
+    if(this.state.phase==='item'){
+      const items=[...this.state.items];
+      const idx=this.state.itemIndex;
+      items[idx]={...items[idx], a:{...items[idx].a,[id]:v}};
+      this.setState({items});
+    }else{
+      this.setState({shared:{...this.state.shared,[id]:v}});
+    }
+    this.persist();
+  }
+  setPhoto(id,val){
+    if(this.state.phase==='item'){
+      const items=[...this.state.items];
+      const idx=this.state.itemIndex;
+      items[idx]={...items[idx], photos:{...items[idx].photos,[id]:val}};
+      this.setState({items});
+    }else{
+      this.setState(s=>({sharedPhotos:{...s.sharedPhotos,[id]:val}}));
+    }
   }
 
-  go(i){ this.setState({screen:'step',i}); }
+  filled(st,ans,photosBag){
+    const ids=[...(st.f||[]),...(st.a||[])].map(x=>x.id);
+    if(st.oid) ids.push(st.oid);
+    if(ids.some(id=>(ans[id]||'').trim())) return true;
+    return (st.p||[]).some(p=>photosBag[p.id]);
+  }
+
   next(){
-    const {screen,i}=this.state;
+    const {screen,phase,i}=this.state;
     if(screen==='section'){ this.setState({screen:'step'}); return; }
     if(screen==='review'){ this.submit(); return; }
-    if(screen==='done'){ return; }
+    if(screen==='done'||screen==='itemDone'){ return; }
+    const steps=phaseSteps(phase);
     const nx=i+1;
-    if(nx>=STEPS.length){ this.setState({screen:'review'}); return; }
-    if(STEPS[nx].s!==STEPS[i].s){ this.setState({i:nx,screen:'section'}); return; }
-    this.setState({i:nx});
+    if(nx<steps.length){ this.setState({i:nx}); return; }
+    if(phase==='pre'){ this.setState({phase:'item', itemIndex:0, i:0, screen:'section'}); return; }
+    if(phase==='item'){ this.setState({screen:'itemDone'}); return; }
+    if(phase==='post'){ this.setState({screen:'review'}); return; }
   }
   back(){
-    const {screen,i}=this.state;
-    if(screen==='section'){ if(i===0){this.setState({screen:'start'});} else {this.setState({screen:'step',i:i-1});} return; }
-    if(screen==='review'){ this.setState({screen:'step',i:STEPS.length-1}); return; }
-    if(i===0){ this.setState({screen:'start'}); return; }
-    if(STEPS[i-1].s!==STEPS[i].s){ this.setState({screen:'step',i:i-1}); return; }
-    this.setState({i:i-1});
+    const {screen,phase,i,itemIndex}=this.state;
+    if(screen==='section'){
+      if(phase==='pre'){ this.setState({screen:'start'}); return; }
+      if(phase==='item'){
+        if(itemIndex===0){ this.setState({phase:'pre', i:PRE_STEPS.length-1, screen:'step'}); return; }
+        this.setState({screen:'itemDone'}); return;
+      }
+      if(phase==='post'){ this.setState({screen:'itemDone'}); return; }
+    }
+    if(screen==='step'){
+      if(i===0){ this.setState({screen:'section'}); return; }
+      this.setState({i:i-1}); return;
+    }
+    if(screen==='itemDone'){ this.setState({phase:'item', i:ITEM_STEPS.length-1, screen:'step'}); return; }
+    if(screen==='review'){ this.setState({phase:'post', i:POST_STEPS.length-1, screen:'step'}); return; }
+  }
+
+  addAnotherItem(){
+    const items=[...this.state.items,{a:{},photos:{}}];
+    this.setState({items, itemIndex:items.length-1, i:0, phase:'item', screen:'section'});
+  }
+  finishItems(){
+    this.setState({phase:'post', i:0, screen:'section'});
+  }
+  removeItem(idx){
+    if(this.state.items.length<=1){ this.flash('最後の1点は削除できません'); return; }
+    const items=this.state.items.filter((_,k)=>k!==idx);
+    this.setState({items, itemIndex:Math.min(this.state.itemIndex, items.length-1)});
+    this.persist();
+    this.flash('器'+(idx+1)+'を削除しました');
   }
 
   endpoint(){
@@ -356,29 +434,44 @@ class Component extends DCLogic {
     return ep;
   }
 
-  payload(){
-    const rows=STEPS.flatMap(st=>{
+  rowsFrom(steps,ans,sectionLabel){
+    return steps.flatMap(st=>{
       const out=[];
-      if(st.oid) out.push({section:SEC[st.s].ja, group:st.g, label:st.ja, key:st.oid, value:this.state.a[st.oid]||''});
+      if(st.oid) out.push({section:sectionLabel, group:st.g, label:st.ja, key:st.oid, value:ans[st.oid]||''});
       [...(st.f||[]),...(st.a||[])].forEach(f=>{
-        out.push({section:SEC[st.s].ja, group:st.g, label:(f.l?st.ja+'／'+f.l:st.ja), key:f.id, value:this.state.a[f.id]||''});
+        out.push({section:sectionLabel, group:st.g, label:(f.l?st.ja+'／'+f.l:st.ja), key:f.id, value:ans[f.id]||''});
       });
       (st.p||[]).forEach(p=>{
-        out.push({section:SEC[st.s].ja, group:st.g, label:p.en+' メモ', key:'memo_'+p.id, value:this.state.a['memo_'+p.id]||''});
+        out.push({section:sectionLabel, group:st.g, label:p.en+' メモ', key:'memo_'+p.id, value:ans['memo_'+p.id]||''});
       });
       return out;
     });
+  }
+  filesFrom(steps,ans,photosBag){
     const files=[];
-    STEPS.forEach(st=>(st.p||[]).forEach(p=>{
-      const ph=this.state.photos[p.id];
-      if(ph) files.push({key:p.id, label:p.en, memo:this.state.a['memo_'+p.id]||'', dataUrl:ph.dataUrl, filename:p.id+'.jpg'});
+    steps.forEach(st=>(st.p||[]).forEach(p=>{
+      const ph=photosBag[p.id];
+      if(ph) files.push({key:p.id, label:p.en, memo:ans['memo_'+p.id]||'', dataUrl:ph.dataUrl, filename:p.id+'.jpg'});
+    }));
+    return files;
+  }
+
+  payload(){
+    const sharedRows=[
+      ...this.rowsFrom(PRE_STEPS, this.state.shared, '店舗・ブランドコンセプト'),
+      ...this.rowsFrom(POST_STEPS, this.state.shared, '製作スケジュール')
+    ];
+    const sharedFiles=this.filesFrom(PRE_STEPS, this.state.shared, this.state.sharedPhotos);
+    const items=this.state.items.map(it=>({
+      rows:this.rowsFrom(ITEM_STEPS, it.a, '器 仕様・デザイン'),
+      files:this.filesFrom(ITEM_STEPS, it.a, it.photos)
     }));
     return {
       form:'TSUMUGI ORDER CONCEPT SHEET',
       submittedAt:new Date().toISOString(),
-      store:this.state.a.store||'', project:this.state.a.project||'',
-      contact:this.state.a.contact||'', contactTel:this.state.a.contact_tel||'',
-      rows, files
+      store:this.state.shared.store||'', project:this.state.shared.project||'',
+      contact:this.state.shared.contact||'', contactTel:this.state.shared.contact_tel||'',
+      sharedRows, sharedFiles, items
     };
   }
 
@@ -400,42 +493,63 @@ class Component extends DCLogic {
     }
   }
 
-  renderVals(){
-    const st=STEPS[this.state.i]||STEPS[0];
-    const {screen}=this.state;
-    const isStep=screen==='step';
-    const secIdx = screen==='section'? st.s : st.s;
-    const sec=SEC[secIdx]||SEC[0];
-
-    const counts=SEC.map((s,k)=>STEPS.filter(x=>x.s===k).length);
-    const bars=SEC.map((s,k)=>{
-      const list=STEPS.filter(x=>x.s===k);
-      const done=list.filter(x=>this.filled(x)).length;
-      return {w:Math.round(done/list.length*100)+'%'};
+  buildReview(steps,ans,photosBag,phase,itemIndex,prefix){
+    return steps.map((x,k)=>{
+      const parts=[...(x.f||[]),...(x.a||[])].map(f=>ans[f.id]).filter(v=>v&&v.trim());
+      if(x.oid&&ans[x.oid]) parts.unshift(ans[x.oid]);
+      const np=(x.p||[]).filter(p=>photosBag[p.id]).length;
+      if(np) parts.push('写真 '+np+'枚');
+      const v=parts.join(' / ');
+      return {
+        label:(prefix?prefix+'・':'')+x.ja, value:v||'未入力',
+        color: v? 'var(--color-text)':'var(--color-neutral-500)',
+        go:()=>this.setState({phase, i:k, itemIndex:itemIndex===undefined?this.state.itemIndex:itemIndex, screen:'step'})
+      };
     });
+  }
 
-    const mk=(f,i)=>({
+  renderVals(){
+    const {screen,phase,i,itemIndex}=this.state;
+    const steps=phaseSteps(phase);
+    const st=steps[i]||steps[0];
+    const ans=this.currentAnswers();
+    const photosBag=this.currentPhotos();
+    const sec=SECINFO[phase]||SECINFO.pre;
+    const itemCount=this.state.items.length;
+
+    const preList=PRE_STEPS, itemList=ITEM_STEPS, postList=POST_STEPS;
+    const preDone=preList.filter(x=>this.filled(x,this.state.shared,this.state.sharedPhotos)).length;
+    const curItem=this.state.items[itemIndex]||{a:{},photos:{}};
+    const itemDoneN=itemList.filter(x=>this.filled(x,curItem.a,curItem.photos)).length;
+    const postDone=postList.filter(x=>this.filled(x,this.state.shared,{})).length;
+    const bars=[
+      {w:Math.round(preDone/preList.length*100)+'%'},
+      {w:Math.round(itemDoneN/itemList.length*100)+'%'},
+      {w:Math.round(postDone/postList.length*100)+'%'}
+    ];
+
+    const mk=(f)=>({
       hasLabel:!!f.l, label:f.l||'',
       hasPrefix:!!f.prefix, prefix:f.prefix||'',
       hasUnit:!!f.unit, unit:f.unit||'',
       ph:f.ph||'', mode:f.mode||'text',
-      v:this.state.a[f.id]||'',
-      set:(e)=>this.set(f.id,e.target.value)
+      v:ans[f.id]||'',
+      set:(e)=>this.setAnswer(f.id,e.target.value)
     });
 
     const photos=(st.p||[]).map(p=>{
-      const cur=this.state.photos[p.id];
+      const cur=photosBag[p.id];
       return {
         en:p.en, ja:p.ja, hint:p.hint,
         has:!!cur, empty:!cur, url:cur?cur.dataUrl:'',
-        memo:this.state.a['memo_'+p.id]||'',
-        setMemo:(e)=>this.set('memo_'+p.id,e.target.value),
+        memo:ans['memo_'+p.id]||'',
+        setMemo:(e)=>this.setAnswer('memo_'+p.id,e.target.value),
         pick:async (e)=>{
           const file=e.target.files&&e.target.files[0];
           if(!file) return;
           try{
             const out=await compress(file,1600,0.82);
-            this.setState(s=>({photos:{...s.photos,[p.id]:out}}));
+            this.setPhoto(p.id,out);
           }catch(err){
             this.flash('この画像は読み込めませんでした');
           }
@@ -443,42 +557,61 @@ class Component extends DCLogic {
       };
     });
 
+    const pureOption=(st.o||[]).length>0 && !(st.f||[]).length && !(st.a||[]).length && !(st.p||[]).length;
     const options=(st.o||[]).map(label=>({
-      label, name:'opt_'+st.oid, on:this.state.a[st.oid]===label, off:this.state.a[st.oid]!==label,
-      pick:()=>this.set(st.oid,label)
+      label, name:'opt_'+st.oid, on:ans[st.oid]===label, off:ans[st.oid]!==label,
+      pick:()=>{
+        this.setAnswer(st.oid,label);
+        if(pureOption){ setTimeout(()=>this.next(),180); }
+      }
     }));
 
-    const review=STEPS.map((x,k)=>{
-      const parts=[...(x.f||[]),...(x.a||[])].map(f=>this.state.a[f.id]).filter(v=>v&&v.trim());
-      if(x.oid&&this.state.a[x.oid]) parts.unshift(this.state.a[x.oid]);
-      const np=(x.p||[]).filter(p=>this.state.photos[p.id]).length;
-      if(np) parts.push('写真 '+np+'枚');
-      const v=parts.join(' / ');
-      return {n:String(k+1).padStart(2,'0'), label:x.ja, value:v||'未入力',
-        color: v? 'var(--color-text)':'var(--color-neutral-500)',
-        go:()=>this.go(k)};
+    let review=[
+      ...this.buildReview(PRE_STEPS, this.state.shared, this.state.sharedPhotos, 'pre')
+    ];
+    this.state.items.forEach((it,idx)=>{
+      review.push(...this.buildReview(ITEM_STEPS, it.a, it.photos, 'item', idx, '器'+(idx+1)));
+      review.push({isDelete:true, label:'', value:'－ 器'+(idx+1)+'を削除 －', color:'var(--color-accent)', go:()=>this.removeItem(idx)});
     });
+    review.push(...this.buildReview(POST_STEPS, this.state.shared, {}, 'post'));
+    let qn=0;
+    review=review.map(r=>r.isDelete? {...r,n:'✕'} : {...r,n:String(++qn).padStart(2,'0')});
 
-    const nPhotos=Object.keys(this.state.photos).length;
-    const nFilled=STEPS.filter(x=>this.filled(x)).length;
+    const nPhotos=Object.keys(this.state.sharedPhotos).length + this.state.items.reduce((s,it)=>s+Object.keys(it.photos).length,0);
+    const nFilled=preDone+postDone+this.state.items.reduce((s,it)=>s+ITEM_STEPS.filter(x=>this.filled(x,it.a,it.photos)).length,0);
+    const totalSteps=PRE_STEPS.length+POST_STEPS.length+ITEM_STEPS.length*itemCount;
     const d=this.state.draft;
+    const isLastOverall=phase==='post'&&i===POST_STEPS.length-1;
 
     return {
-      clockRight:'記入 '+Math.round(nFilled/STEPS.length*100)+'%',
-      sections:SEC.map((s,k)=>({...s,count:counts[k]+'問'})),
-      isStart:screen==='start', isSection:screen==='section', isStep, isReview:screen==='review', isDone:screen==='done',
-      hasNav:screen!=='done', canBack:screen!=='start',
-      nextLabel: this.state.sending?'送信中…' : screen==='start'?'記入をはじめる' : screen==='section'?'はじめる' : screen==='review'?'この内容で送信する' : (this.state.i===STEPS.length-1?'確認へ進む':'次へ'),
+      clockRight: itemCount? '器 '+itemCount+'点':'',
+      sections:[
+        {...SECINFO.pre, count:PRE_STEPS.length+'問'},
+        {...SECINFO.item, count:ITEM_STEPS.length+'問 ／ 1点あたり'},
+        {...SECINFO.post, count:POST_STEPS.length+'問'}
+      ],
+      isStart:screen==='start', isSection:screen==='section', isStep:screen==='step',
+      isItemDone:screen==='itemDone', isReview:screen==='review', isDone:screen==='done',
+      itemCount,
+      hasNav:screen!=='done'&&screen!=='itemDone', canBack:screen!=='start',
+      nextLabel: this.state.sending?'送信中…' : screen==='start'?'記入をはじめる' : screen==='section'?'はじめる' : screen==='review'?'この内容で送信する' : (isLastOverall?'確認へ進む':'次へ'),
       sending:this.state.sending,
       hasErr:!!this.state.err, err:this.state.err,
       live:!!this.endpoint(),
       next:()=>this.next(), back:()=>this.back(),
-      begin:()=>this.setState({screen:'section',i:0}),
+      addAnotherItem:()=>this.addAnotherItem(), finishItems:()=>this.finishItems(),
+      begin:()=>this.setState({screen:'section',phase:'pre',i:0}),
       hasDraft:!!d, draftAt: d? new Date(d.at).toLocaleDateString('ja-JP'):'',
-      resume:()=>{ this.setState({a:d.a||{},screen:'section',i:0}); this.flash('下書きを読み込みました'); },
-      save:()=>{ this.persist(this.state.a); this.flash('下書きを保存しました'); },
-      secN:sec.n, secJa:sec.ja, secEn:sec.en, secDesc:sec.desc,
-      counter:String(this.state.i+1).padStart(2,'0')+' / '+STEPS.length,
+      resume:()=>{
+        const items=(d.items&&d.items.length)? d.items.map(it=>({a:it.a||{},photos:{}})) : [{a:{},photos:{}}];
+        this.setState({shared:d.shared||{}, items, itemIndex:0, screen:'review'});
+        this.flash('下書きを読み込みました');
+      },
+      save:()=>{ this.persist(); this.flash('下書きを保存しました'); },
+      secN:sec.n, secJa: phase==='item'&&itemIndex>0? sec.ja+'（'+(itemIndex+1)+'点目）':sec.ja, secEn:sec.en, secDesc:sec.desc,
+      counter: phase==='item'
+        ? '器'+(itemIndex+1)+' ・ '+String(i+1).padStart(2,'0')+' / '+ITEM_STEPS.length
+        : String(i+1).padStart(2,'0')+' / '+steps.length,
       bars,
       stepKicker:st.g, stepJa:st.ja, stepEn:st.en,
       showEn:(this.props.englishLabels??true)&&!!st.en,
@@ -488,7 +621,8 @@ class Component extends DCLogic {
       hasAreas:(st.a||[]).length>0, areas:(st.a||[]).map(mk),
       hasPhotos:(st.p||[]).length>0, photos,
       review,
-      doneFilled:nFilled+' / '+STEPS.length,
+      doneItems:itemCount+' 点',
+      doneFilled:nFilled+' / '+totalSteps,
       donePhotos:nPhotos+' 枚',
       doneRef:this.state.ref||'—',
       toast:this.state.toast
