@@ -584,7 +584,7 @@ class Component extends DCLogic {
     const isLastOverall=phase==='post'&&i===POST_STEPS.length-1;
 
     return {
-      clockRight: itemCount? '器 '+itemCount+'点':'',
+      clockRight: (screen!=='start'&&itemCount)? '器 '+itemCount+'点':'',
       sections:[
         {...SECINFO.pre, count:PRE_STEPS.length+'問'},
         {...SECINFO.item, count:ITEM_STEPS.length+'問 ／ 1点あたり'},
