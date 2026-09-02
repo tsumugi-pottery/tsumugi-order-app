@@ -244,7 +244,8 @@ function osLabelCell_(cell, text) {
   cell.setValue(text).setFontWeight('bold').setBackground(OS_PANEL).setVerticalAlignment('top');
 }
 function osValueCell_(range, text) {
-  range.setValue(text || '').setWrap(true).setVerticalAlignment('top');
+  const target = range.getNumColumns() > 1 ? range.merge() : range;
+  target.setValue(text || '').setWrap(true).setVerticalAlignment('top');
 }
 
 /** ラベル/値 のペアを1行に2組 */
@@ -270,7 +271,8 @@ function osPhotoRow_(sh, row, photos) {
   photos.forEach(function (p, i) {
     const c = 1 + i * cols;
     const span = (i === photos.length - 1) ? OS_WIDTH - c + 1 : cols;
-    const cell = sh.getRange(row, c, 1, span);
+    const range = sh.getRange(row, c, 1, span);
+    const cell = span > 1 ? range.merge() : range;
     if (p.url) {
       const label = p.label + (p.memo ? '（' + p.memo + '）' : '');
       cell.setFormula('=HYPERLINK("' + p.url + '","📎 ' + label.replace(/"/g, "'") + '")');
