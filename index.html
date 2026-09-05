@@ -252,9 +252,8 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
 const PRE_STEPS = [
   {g:'案件情報 / PROJECT',ja:'今回のご依頼のお名前を教えてください',en:'PROJECT',f:[{id:'project',ph:'例：秋の会席 新調'}]},
   {g:'案件情報 / PROJECT',ja:'お店の名前',en:'STORE',f:[{id:'store',ph:'例：紬 銀座'}]},
-  {g:'案件情報 / PROJECT',ja:'ご担当者とご連絡先',en:'CONTACT',f:[{id:'contact',l:'ご担当者',ph:'お名前'},{id:'contact_tel',l:'連絡先',ph:'電話番号 / メール',mode:'tel'}]},
-  {g:'ロゴ・店舗イメージ',ja:'ロゴと店内の写真を添えてください',en:'LOGO & ATMOSPHERE',help:'内装パースや参考画像でも構いません。空間の明るさや素材感が伝わるものが理想です。',p:[
-    {id:'logo',en:'LOGO',ja:'ロゴ画像',hint:'ai / png / jpg'},
+  {g:'案件情報 / PROJECT',ja:'ご担当者とご連絡先',en:'CONTACT',f:[{id:'contact',l:'ご担当者',ph:'お名前'},{id:'contact_tel',l:'連絡先（電話番号）',ph:'090-1234-5678',mode:'tel'},{id:'contact_email',l:'メールアドレス',ph:'you@example.com',mode:'email'}]},
+  {g:'店舗イメージ',ja:'店内の写真を添えてください',en:'STORE ATMOSPHERE',help:'内装パースや参考画像でも構いません。空間の明るさや素材感が伝わるものが理想です。',p:[
     {id:'atmos',en:'STORE ATMOSPHERE / INTERIOR',ja:'店舗写真・内装',hint:'店内 / 卓上 / 照明'}]},
   {g:'お店のコンセプト',ja:'お店が大切にしていることを聞かせてください',en:'STORE CONCEPT',help:'ブランドストーリー / 価値 / ターゲット / 料理の特徴など',a:[{id:'concept',ph:'例：素材の力を引き出す、静かな和食。40代以上のお客様が中心で…'}]},
   {g:'デザインの方向',ja:'今回の器で表現したいこと',en:'DESIGN DIRECTION',help:'空間や料理との関係、器で表現したい印象・キーワード',a:[{id:'direction',ph:'例：余白のある盛付、土の温度が残る質感、料理の色が締まる釉薬'}]},
@@ -267,29 +266,22 @@ const PRE_STEPS = [
 /* 02: 器 仕様・デザイン — 器1点ごとに繰り返す */
 const ITEM_STEPS = [
   {g:'基本仕様 / SPECIFICATION',ja:'アイテム名と使用用途',en:'ITEM',f:[{id:'item',l:'アイテム名',ph:'例：八寸皿'},{id:'usage',l:'使用用途',ph:'例：先付の盛皿'}]},
-  {g:'基本仕様 / SPECIFICATION',ja:'形状',en:'SHAPE',o:['丸','楕円','角','リム','高台','その他'],oid:'shape',f:[{id:'shape_note',l:'補足',ph:'選んだ形状の補足（任意）'}]},
-  {g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
-  {g:'素材・表情',ja:'素材・土',en:'MATERIAL',f:[{id:'material',ph:'例：信楽の粗い土'}]},
-  {g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
-  {g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
-  {g:'素材・表情',ja:'ロゴ・加飾',en:'DECORATION',f:[{id:'deco',ph:'例：高台内に印判で小さく'}]},
-  {g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
-  {g:'数量 / QUANTITY',ja:'予備・追加生産',en:'SPARE / REORDER',o:['有','無'],oid:'spare',f:[{id:'spare_qty',l:'数量',unit:'個',mode:'numeric'}]},
   {g:'イメージ写真 / REFERENCE',ja:'イメージに近い器の写真を3枚まで',en:'REFERENCE IMAGES',help:'完成形でなくて構いません。「この色」「この縁の形」など、1枚ごとにポイントを書き添えてください。',p:[
     {id:'ref1',en:'REFERENCE 01',ja:'参考写真',hint:'色 / 釉薬'},
     {id:'ref2',en:'REFERENCE 02',ja:'参考写真',hint:'形状 / 縁'},
     {id:'ref3',en:'REFERENCE 03',ja:'参考写真',hint:'質感 / 盛付'}]},
-  {g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
-  {g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample',f:[{id:'sample_qty',l:'数量',unit:'個',mode:'numeric'}]},
-  {g:'条件・品質基準 / COMMERCIAL',ja:'希望納期',en:'DUE DATE',f:[{id:'due',ph:'例：2026年11月20日'}]},
+  {g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
+  {g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
+  {g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
+  {g:'素材・表情',ja:'ロゴ・刻印の有無',en:'LOGO / DECORATION',o:['有','無'],oid:'deco',help:'例：高台内に印判で小さく（刻印となり、別途費用がかかります）',p:[{id:'deco_file',en:'LOGO / MARK DATA',ja:'ロゴ・刻印データ',hint:'ai / png / jpg'}]},
+  {g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
+  {g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',help:'素材やサイズによって金額が変わる場合があります。ご希望に添えないこともございますので、あらかじめご了承ください。',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
+  {g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample'},
   {g:'条件・品質基準 / QUALITY',ja:'食洗機・レンジ対応',en:'DISHWASHER / MICROWAVE',o:['必須','不要','要相談'],oid:'dish'},
-  {g:'条件・品質基準 / QUALITY',ja:'梱包条件',en:'PACKING',f:[{id:'packing',ph:'例：1枚ずつ紙包み、6枚1箱'}]},
-  {g:'個体差・NG事項 / TOLERANCE',ja:'個体差の許容範囲',en:'TOLERANCE',help:'色ムラ / 釉薬 / 形状 / 寸法など',a:[{id:'tolerance',ph:'例：色ムラは景色として歓迎。寸法は±3mmまで。'}]},
-  {g:'個体差・NG事項 / TOLERANCE',ja:'避けたいこと（NG事項）',en:'NG',help:'避けたい色・艶・表情・形状など',a:[{id:'ng',ph:'例：全面の強い光沢、白すぎる釉'}]},
-  {g:'優先順位 / PRIORITY',ja:'最優先事項 TOP 3',en:'PRIORITY TOP 3',help:'すべてを両立できない場合、この順に優先します。',f:[{id:'p1',l:'1',ph:'例：釉薬の色'},{id:'p2',l:'2',ph:'例：縁の薄さ'},{id:'p3',l:'3',ph:'例：納期'}]}
+  {g:'NG事項',ja:'避けたいこと（NG事項）',en:'NG',help:'避けたい色・艶・表情・形状など',a:[{id:'ng',ph:'例：全面の強い光沢、白すぎる釉'}]}
 ];
 
-/* 03: 製作スケジュール — 1回だけ入力 */
+/* 03: 納品に関して — 1回だけ入力 */
 const POST_STEPS = [
   {g:'納品情報 / DELIVERY',ja:'希望納期',en:'DUE DATE',f:[{id:'d_due',ph:'例：2026年12月10日'}]},
   {g:'納品情報 / DELIVERY',ja:'納品場所',en:'DELIVERY ADDRESS',f:[{id:'d_place',ph:'住所・店舗名'}]},
@@ -300,7 +292,7 @@ const POST_STEPS = [
 const SECINFO = {
   pre:  {n:'01',ja:'店舗・ブランドコンセプト',en:'BRAND & STORE CONCEPT',desc:'器づくりの背景となる、お店の世界観・料理・空間を共有します。'},
   item: {n:'02',ja:'器 仕様・デザイン',en:'TABLEWARE SPECIFICATION',desc:'形状・素材・表情・数量・価格条件を具体化し、窯元との共通言語にします。'},
-  post: {n:'03',ja:'製作スケジュール',en:'PRODUCTION SCHEDULE',desc:'サンプル承認から量産・検品・納品までの進行を確認します。'}
+  post: {n:'03',ja:'納品に関して',en:'DELIVERY',desc:'ご記入いただいた納品情報をもとに、完成した器をお届けします。'}
 };
 
 const KEY = 'tsumugi_draft_v1';
@@ -459,7 +451,7 @@ class Component extends DCLogic {
   payload(){
     const sharedRows=[
       ...this.rowsFrom(PRE_STEPS, this.state.shared, '店舗・ブランドコンセプト'),
-      ...this.rowsFrom(POST_STEPS, this.state.shared, '製作スケジュール')
+      ...this.rowsFrom(POST_STEPS, this.state.shared, '納品に関して')
     ];
     const sharedFiles=this.filesFrom(PRE_STEPS, this.state.shared, this.state.sharedPhotos);
     const items=this.state.items.map(it=>({
@@ -470,7 +462,7 @@ class Component extends DCLogic {
       form:'TSUMUGI ORDER CONCEPT SHEET',
       submittedAt:new Date().toISOString(),
       store:this.state.shared.store||'', project:this.state.shared.project||'',
-      contact:this.state.shared.contact||'', contactTel:this.state.shared.contact_tel||'',
+      contact:this.state.shared.contact||'', contactTel:this.state.shared.contact_tel||'', contactEmail:this.state.shared.contact_email||'',
       sharedRows, sharedFiles, items
     };
   }
@@ -593,7 +585,7 @@ class Component extends DCLogic {
       isStart:screen==='start', isSection:screen==='section', isStep:screen==='step',
       isItemDone:screen==='itemDone', isReview:screen==='review', isDone:screen==='done',
       itemCount,
-      hasNav:screen!=='done'&&screen!=='itemDone', canBack:screen!=='start',
+      hasNav:screen!=='done'&&screen!=='itemDone'&&screen!=='start', canBack:screen!=='start',
       nextLabel: this.state.sending?'送信中…' : screen==='start'?'記入をはじめる' : screen==='section'?'はじめる' : screen==='review'?'この内容で送信する' : (isLastOverall?'確認へ進む':'次へ'),
       sending:this.state.sending,
       hasErr:!!this.state.err, err:this.state.err,

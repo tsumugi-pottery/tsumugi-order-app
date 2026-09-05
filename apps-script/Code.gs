@@ -159,39 +159,41 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
   row = osMeta_(sh, row, data, itemCount);
   row++;
 
+  const contactBits = [sharedMap.contact_tel, sharedMap.contact_email].filter(String).join(' / ');
+
   row = osSection_(sh, row, '01', '店舗・ブランドコンセプト / BRAND & STORE CONCEPT');
   row = osRow2_(sh, row, '案件名', data.project, '作成日', Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy年MM月dd日'));
-  row = osRow2_(sh, row, 'お店の名前', data.store, 'ご担当者', data.contact + (data.contactTel ? '（' + data.contactTel + '）' : ''));
+  row = osRow2_(sh, row, 'お店の名前', data.store, 'ご担当者', data.contact + (contactBits ? '（' + contactBits + '）' : ''));
   row = osRow1_(sh, row, 'お店のコンセプト', sharedMap.concept);
   row = osRow1_(sh, row, 'デザインの方向', sharedMap.direction);
   row = osRow2_(sh, row, '主な料理', sharedMap.dishes, '使用シーン', sharedMap.scene);
   row = osRow2_(sh, row, '盛付イメージ', sharedMap.plating, '特記事項', sharedMap.notes1);
   row = osPhotoRow_(sh, row, [
-    { label: 'ロゴ', url: sharedFileUrls.logo },
     { label: '店舗写真・内装', url: sharedFileUrls.atmos }
   ]);
   row++;
 
   row = osSection_(sh, row, '02', '器 仕様・デザイン / TABLEWARE SPECIFICATION' + (m.item ? '　－ ' + m.item + ' －' : ''));
   row = osRow2_(sh, row, 'アイテム名', m.item, '使用用途', m.usage);
-  row = osRow2_(sh, row, '形状', [m.shape, m.shape_note].filter(String).join(' / '), 'サイズ', osSize_(m));
-  row = osRow2_(sh, row, '素材・土', m.material, '色・釉薬', m.glaze);
-  row = osRow2_(sh, row, '素材感・表情', m.texture, 'ロゴ・加飾', m.deco);
-  row = osRow2_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '', '予備・追加生産', m.spare ? m.spare + (m.spare_qty ? '　数量：' + m.spare_qty : '') : '');
   row = osPhotoRow_(sh, row, [
     { label: 'REFERENCE 01', url: fileUrls.ref1, memo: m.memo_ref1 },
     { label: 'REFERENCE 02', url: fileUrls.ref2, memo: m.memo_ref2 },
     { label: 'REFERENCE 03', url: fileUrls.ref3, memo: m.memo_ref3 }
   ]);
+  row = osRow1_(sh, row, 'サイズ', osSize_(m));
+  row = osRow1_(sh, row, '色・釉薬', m.glaze);
+  row = osRow1_(sh, row, '素材感・表情', m.texture);
+  row = osRow1_(sh, row, 'ロゴ・刻印', m.deco);
+  row = osPhotoRow_(sh, row, [
+    { label: 'ロゴ・刻印データ', url: fileUrls.deco_file }
+  ]);
+  row = osRow1_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '');
   row = osRow2_(sh, row, '希望単価', m.unitprice ? '¥' + m.unitprice + ' / 個' : '', '総予算', m.budget ? '¥' + m.budget : '');
-  row = osRow2_(sh, row, 'サンプル製作', m.sample ? m.sample + (m.sample_qty ? '　数量：' + m.sample_qty : '') : '', '希望納期', m.due);
-  row = osRow2_(sh, row, '食洗機・レンジ', m.dish, '梱包条件', m.packing);
-  row = osRow1_(sh, row, '個体差の許容範囲', m.tolerance);
+  row = osRow2_(sh, row, 'サンプル製作', m.sample, '食洗機・レンジ', m.dish);
   row = osRow1_(sh, row, '避けたいこと（NG事項）', m.ng);
-  row = osRow1_(sh, row, '最優先事項 TOP 3', [m.p1, m.p2, m.p3].filter(String).map(function (v, i) { return (i + 1) + '. ' + v; }).join('　'));
   row++;
 
-  row = osSection_(sh, row, '03', '製作スケジュール / PRODUCTION SCHEDULE');
+  row = osSection_(sh, row, '03', '納品に関して / DELIVERY');
   row = osRow2_(sh, row, '希望納期', sharedMap.d_due, '納品場所', sharedMap.d_place);
   row = osRow2_(sh, row, '納品先担当者', sharedMap.d_person, '連絡先', sharedMap.d_tel);
   row = osRow1_(sh, row, '備考', sharedMap.remarks);
@@ -342,7 +344,7 @@ function notify_(data, items, folder, orderFile) {
       '受付番号：' + data.ref,
       'お店：' + data.store,
       '案件：' + data.project,
-      'ご担当：' + data.contact + '（' + data.contactTel + '）',
+      'ご担当：' + data.contact + '（' + [data.contactTel, data.contactEmail].filter(Boolean).join(' / ') + '）',
       '器の点数：' + items.length + ' 点',
       '記入項目：' + totalFilled + ' 件 ／ 写真：' + totalFiles + ' 枚',
       '写真フォルダ：' + folder.getUrl(),
