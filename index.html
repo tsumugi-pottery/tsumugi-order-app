@@ -158,7 +158,7 @@ input.input,textarea.input{font-family:"Noto Sans JP","Archivo",system-ui,sans-s
 </div>
 </sc-if>
 </label>
-<input class="input" value="{{ p.memo }}" onChange="{{ p.setMemo }}" placeholder="ポイント：この写真で伝えたいこと" style="min-height:48px;padding:12px;font-size:14px">
+<input class="input" value="{{ p.memo }}" onChange="{{ p.setMemo }}" placeholder="{{ p.memoPh }}" style="min-height:48px;padding:12px;font-size:14px">
 </div>
 </sc-for>
 </div>
@@ -273,7 +273,7 @@ const ITEM_STEPS = [
   {g:'基本仕様 / SPECIFICATION',ja:'サイズ',en:'SIZE',help:'わかる範囲で構いません。既存の器を測っていただくのが確実です。',f:[{id:'size_d',l:'Φ 直径',unit:'mm',mode:'numeric'},{id:'size_w',l:'W × D',unit:'mm',ph:'例：240 × 160'},{id:'size_h',l:'H 高さ',unit:'mm',mode:'numeric'}]},
   {g:'素材・表情',ja:'色・釉薬',en:'GLAZE',f:[{id:'glaze',ph:'例：黒マット、わずかに青み'}]},
   {g:'素材・表情',ja:'素材感・表情',en:'TEXTURE',f:[{id:'texture',ph:'例：ざらつきを残す、艶は抑えめ'}]},
-  {g:'素材・表情',ja:'ロゴ・刻印の有無',en:'LOGO / DECORATION',o:['有','無'],oid:'deco',help:'例：高台内に印判で小さく（刻印となり、別途費用がかかります）',p:[{id:'deco_file',en:'LOGO / MARK DATA',ja:'ロゴ・刻印データ',hint:'ai / png / jpg'}]},
+  {g:'素材・表情',ja:'ロゴ・刻印の有無',en:'LOGO / DECORATION',o:['有','無'],oid:'deco',help:'刻印となり、別途費用がかかります。',p:[{id:'deco_file',en:'LOGO / MARK DATA',ja:'ロゴ・刻印データ',hint:'ai / png / jpg',memoPh:'ポイント：希望の刻印場所'}]},
   {g:'数量 / QUANTITY',ja:'希望数量',en:'QUANTITY',f:[{id:'qty',unit:'個',mode:'numeric',ph:'例：120'}]},
   {g:'条件・品質基準 / COMMERCIAL',ja:'ご予算',en:'BUDGET',help:'素材やサイズによって金額が変わる場合があります。ご希望に添えないこともございますので、あらかじめご了承ください。',f:[{id:'unitprice',l:'希望単価',prefix:'¥',unit:'/ 個',mode:'numeric'},{id:'budget',l:'総予算',prefix:'¥',mode:'numeric'}]},
   {g:'条件・品質基準 / COMMERCIAL',ja:'サンプル製作',en:'SAMPLE',o:['有','無'],oid:'sample'},
@@ -534,7 +534,7 @@ class Component extends DCLogic {
       return {
         en:p.en, ja:p.ja, hint:p.hint,
         has:!!cur, empty:!cur, url:cur?cur.dataUrl:'',
-        memo:ans['memo_'+p.id]||'',
+        memo:ans['memo_'+p.id]||'', memoPh:p.memoPh||'ポイント：この写真で伝えたいこと',
         setMemo:(e)=>this.setAnswer('memo_'+p.id,e.target.value),
         pick:async (e)=>{
           const file=e.target.files&&e.target.files[0];
