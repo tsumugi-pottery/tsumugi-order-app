@@ -185,7 +185,7 @@ function buildItemSheet_(sh, data, item, idx, itemCount, sharedFileUrls, fileUrl
   row = osRow1_(sh, row, '素材感・表情', m.texture);
   row = osRow1_(sh, row, 'ロゴ・刻印', m.deco);
   row = osPhotoRow_(sh, row, [
-    { label: 'ロゴ・刻印データ', url: fileUrls.deco_file }
+    { label: 'ロゴ・刻印データ', url: fileUrls.deco_file, memo: m.memo_deco_file }
   ]);
   row = osRow1_(sh, row, '希望数量', m.qty ? m.qty + ' 個' : '');
   row = osRow2_(sh, row, '希望単価', m.unitprice ? '¥' + m.unitprice + ' / 個' : '', '総予算', m.budget ? '¥' + m.budget : '');
